@@ -1,3 +1,5 @@
 backend/.env
 .env
 OPEN AI API KEY.txt
+__pycache__/
+*.pyc
