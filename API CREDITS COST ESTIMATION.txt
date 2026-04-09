@@ -1,0 +1,112 @@
+API CREDITS COST ESTIMATION:
+
+🧠 1️⃣ REAL PRICING (What you’re actually paying)
+
+For the model you're using (gpt-4.1-mini):
+
+Input: ~$0.40 per 1M tokens
+Output: ~$1.60 per 1M tokens
+
+👉 Combined average ≈ $0.002 per 1K tokens (~₹0.16)
+
+🚀 2️⃣ COST PER SESSION (YOUR APP)
+
+Let’s translate this into YOUR product.
+
+🟢 Small session (5–10 min)
+~300–500 tokens
+Cost ≈ ₹0.05 – ₹0.10
+🟡 Medium session (20–30 min)
+~800–1200 tokens
+Cost ≈ ₹0.15 – ₹0.30
+🔴 Large session (45–60 min)
+~1500–2500 tokens
+Cost ≈ ₹0.30 – ₹0.80
+💰 3️⃣ TESTING PHASE COST (RIGHT NOW)
+🎯 Recommended budget:
+₹400 – ₹800 ($5–$10)
+What you get:
+~500 to 1500 sessions
+
+👉 Enough to:
+
+test everything
+debug
+simulate users
+🚀 4️⃣ EARLY LAUNCH COST (REALISTIC)
+
+Let’s simulate your first users 👇
+
+Scenario:
+50 users/day
+2 sessions/user
+= 100 sessions/day
+Cost:
+100 × ₹0.25 ≈ ₹25/day  
+≈ ₹750/month
+
+👉 VERY cheap for a SaaS
+
+🚀 5️⃣ GROWTH STAGE COST
+Scenario:
+500 users/day
+2 sessions each
+= 1000 sessions/day
+Cost:
+1000 × ₹0.25 ≈ ₹250/day  
+≈ ₹7500/month
+
+👉 Still manageable
+
+💸 6️⃣ SCALE STAGE (IMPORTANT)
+Scenario:
+2000 users/day
+2 sessions
+= 4000 sessions/day
+Cost:
+≈ ₹1000/day  
+≈ ₹30,000/month
+
+👉 At this point → your paid plans cover everything
+
+🧠 7️⃣ HOW MANY REQUESTS = HOW MANY TOKENS?
+Simple rule:
+1 session ≠ fixed cost  
+It depends on response length
+
+But for YOUR app:
+
+1 session ≈ 500–2000 tokens
+
+👉 That’s your working unit
+
+🎯 8️⃣ SIMPLE FORMULA (SAVE THIS)
+🔥 Cost formula:
+Cost = sessions × avg ₹0.25
+Example:
+1000 sessions → ₹250
+🧠 9️⃣ HOW TO CONTROL COST (IMPORTANT)
+
+Later you can:
+
+🟢 Limit output length (already doing ✔️)
+🟢 Better prompting (less waste)
+🟢 Different models per tier (you planned ✔️)
+🚀 10️⃣ FINAL RECOMMENDATION (SAVE THIS)
+📌 Testing phase:
+₹500 budget → safe
+📌 First launch:
+₹1000–₹2000 buffer
+📌 Scaling:
+Cost grows WITH users (good problem)
+🧠 Final Insight (VERY IMPORTANT)
+
+Your cost is:
+
+NOT fixed ❌  
+USAGE-BASED ✅
+
+👉 Which means:
+
+More users = more cost  
+BUT ALSO = more revenue

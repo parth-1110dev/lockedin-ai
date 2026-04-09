@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="dark" />
+    <title>LockedIn - Pricing</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+
+    <link rel="stylesheet" href="./pricing.css" />
+  </head>
+
+  <body>
+    <div class="aurora" aria-hidden="true"></div>
+
+    <header class="nav">
+      <div class="nav-inner">
+        <div class="logo" aria-label="LockedIn">LockedIn</div>
+      </div>
+    </header>
+
+    <main class="page">
+      <div class="container">
+        <h1 class="title">Choose Your Plan</h1>
+        <p class="subtext">Stop consuming. Start executing.</p>
+
+        <section class="plans" aria-label="Pricing plans">
+          <button id="pricingBackBtn" class="back-btn" type="button">
+            ← Back
+          </button>
+
+          <article id="planFree" class="plan-card" aria-label="Free plan">
+            <div class="plan-top">
+              <div class="plan-name">FREE</div>
+              <div class="plan-badge plan-badge--muted">Basic AI</div>
+            </div>
+
+            <ul class="feature-list">
+              <li>5 sessions/day</li>
+              <li>max 30 minutes per session</li>
+              <li>basic AI</li>
+            </ul>
+
+            <button id="freeCurrentBtn" class="btn btn-outline" type="button" disabled>
+              Current Plan
+            </button>
+          </article>
+
+          <article id="planPro" class="plan-card plan-card--recommended" aria-label="Pro plan">
+            <div class="recommended-row">
+              <div class="plan-name">PRO</div>
+              <div class="plan-badge">Recommended</div>
+            </div>
+
+            <ul class="feature-list">
+              <li>Unlimited sessions</li>
+              <li>Up to 60 minutes</li>
+              <li>Better AI quality</li>
+            </ul>
+
+            <div class="price">
+              <div class="price-line">₹299/month (India)</div>
+              <div class="price-line">$9/month (International)</div>
+            </div>
+
+            <button id="proUpgradeBtn" class="btn btn-primary" type="button">
+              Upgrade to Pro
+            </button>
+          </article>
+
+          <article id="planElite" class="plan-card" aria-label="Elite plan">
+            <div class="plan-top">
+              <div class="plan-name">ELITE</div>
+              <div class="plan-badge plan-badge--muted">Advanced AI</div>
+            </div>
+
+            <ul class="feature-list">
+              <li>Unlimited sessions</li>
+              <li>Up to 90 minutes</li>
+              <li>Best AI quality</li>
+            </ul>
+
+            <div class="price">
+              <div class="price-line">₹599/month (India)</div>
+              <div class="price-line">$19/month (International)</div>
+            </div>
+
+            <button id="eliteUpgradeBtn" class="btn btn-outline" type="button">
+              Upgrade to Elite
+            </button>
+          </article>
+        </section>
+      </div>
+    </main>
+
+    <script src="./pricing.js"></script>
+  </body>
+</html>
+

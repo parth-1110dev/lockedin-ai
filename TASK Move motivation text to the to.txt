@@ -1,0 +1,25 @@
+TASK: Move motivation text to the top of the session content.
+
+CONSTRAINTS:
+- Do NOT change styling or CSS unless absolutely required
+- Do NOT break layout or spacing
+- Do NOT remove any existing elements
+- Only move the existing motivation text block
+
+REQUIREMENT:
+Ensure structure becomes:
+
+[ Motivation Text ]
+[ Timer ]
+[ AI Content ]
+
+DETAILS:
+- Motivation text must be visible without scrolling
+- If needed, wrap it in a simple container but keep styling minimal
+- Do not redesign UI
+
+OUTPUT:
+- Modify ONLY HTML structure (and minimal CSS if necessary)
+
+GOAL:
+Motivation text appears at the top and is always visible during session.

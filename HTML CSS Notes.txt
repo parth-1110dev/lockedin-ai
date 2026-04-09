@@ -1,0 +1,216 @@
+HTML CSS Notes:
+
+1. HTML Basics
+
+HTML defines the structure of a webpage.
+
+Basic structure:
+
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Page Title</title>
+</head>
+<body>
+  Content here
+</body>
+</html>
+
+Common HTML elements:
+
+Element	Purpose
+<div>	Container for grouping elements
+<span>	Inline container
+<p>	Paragraph
+<h1> – <h6>	Headings
+<button>	Clickable button
+<input>	User input field
+<img>	Display image
+<a>	Link to another page
+
+Attributes:
+
+<img src="image.png" alt="description">
+2. CSS Basics
+
+CSS controls appearance and layout.
+
+Example:
+
+button {
+  background-color: blue;
+  color: white;
+}
+
+Common CSS properties:
+
+Property	Use
+color	text color
+background-color	background
+font-size	text size
+margin	outer spacing
+padding	inner spacing
+border	element border
+width / height	element size
+3. Hover, Transitions, Shadows
+Hover
+button:hover {
+  background-color: red;
+}
+Transition
+transition: background-color 0.3s;
+Shadow
+box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+4. Chrome DevTools
+
+Used for:
+
+• inspecting HTML
+• editing CSS live
+• debugging layout issues
+
+Open with:
+
+Right click → Inspect
+5. CSS Box Model
+
+Every element has:
+
+margin
+border
+padding
+content
+
+Diagram:
+
+Margin
+  Border
+    Padding
+      Content
+
+Example:
+
+padding: 10px;
+margin: 20px;
+6. HTML Structure
+
+Typical page layout:
+
+header
+main content
+footer
+
+Using divs:
+
+<div class="header"></div>
+<div class="content"></div>
+<div class="footer"></div>
+7. Images & Text Boxes
+
+Image:
+
+<img src="image.jpg">
+
+Text input:
+
+<input type="text" placeholder="Enter text">
+8. CSS Display Property
+
+Controls layout behavior.
+
+Display	Meaning
+block	takes full width
+inline	stays in line
+inline-block	inline but allows width
+flex	flexible layout
+grid	grid layout
+
+Example:
+
+display: flex;
+9. The div Element
+
+Most common container element.
+
+Used to group elements for styling and layout.
+
+<div class="container">
+</div>
+10. Nested Layouts
+
+Layouts often contain smaller layouts.
+
+Example:
+
+page
+ ├ header
+ ├ sidebar
+ └ main content
+11. CSS Grid
+
+Used for 2D layouts.
+
+Example:
+
+display: grid;
+grid-template-columns: 1fr 1fr 1fr;
+12. Flexbox
+
+Best for 1D layouts (rows/columns).
+
+Example:
+
+display: flex;
+justify-content: center;
+align-items: center;
+13. Nested Flexbox
+
+Flex containers can contain other flex containers.
+
+Useful for complex UI structures.
+
+14. CSS Position
+
+Controls element placement.
+
+Position	Behavior
+static	default
+relative	relative to itself
+absolute	relative to parent
+fixed	fixed on screen
+15. Absolute vs Relative
+.parent {
+  position: relative;
+}
+
+.child {
+  position: absolute;
+  top: 0;
+}
+
+Absolute elements move inside relative parents.
+
+16. Finishing Projects
+
+Combine:
+
+• HTML structure
+• CSS layout
+• flex/grid
+• positioning
+
+to create full UI.
+
+17. Additional CSS Features
+
+• border-radius
+• opacity
+• overflow
+• z-index
+• gradients
+
+Example:
+
+border-radius: 8px;
+
+These notes are more than enough for reference.

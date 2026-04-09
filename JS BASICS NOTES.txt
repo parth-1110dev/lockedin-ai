@@ -1,0 +1,195 @@
+JS BASICS NOTES:
+1️⃣ What is JavaScript
+
+JavaScript is the programming language of the web.
+
+It is used to:
+
+add interactivity to websites
+
+manipulate HTML elements
+
+handle user input
+
+communicate with servers (APIs)
+
+JS runs in:
+
+browsers
+
+servers (Node.js)
+
+2️⃣ Setting Up the Development Environment
+
+Typical setup:
+
+Code Editor → VS Code / Cursor
+Browser → Chrome
+DevTools → Inspect
+
+You write JS inside .js files.
+
+Example:
+
+console.log("Hello World");
+3️⃣ JavaScript in Browsers
+
+JS runs inside the browser and can interact with the webpage.
+
+Example:
+
+document.body.innerHTML = "Hello";
+
+The browser provides APIs like:
+
+DOM
+
+events
+
+timers
+
+4️⃣ Separation of Concerns
+
+Keep code organized:
+
+HTML → structure
+CSS → styling
+JavaScript → behavior
+
+Example:
+
+<button id="btn">Click</button>
+document.getElementById("btn").onclick = function() {
+  alert("Clicked");
+}
+5️⃣ JavaScript in Node
+
+Node.js allows JavaScript to run outside the browser.
+
+Used for:
+
+backend servers
+
+APIs
+
+automation scripts
+
+Example:
+
+console.log("Running in Node");
+6️⃣ Variables
+
+Variables store values.
+
+Declaration:
+
+let name = "Parth";
+
+Rules:
+
+use let for values that change
+
+use const for fixed values
+
+7️⃣ Constants
+
+Constants cannot be reassigned.
+
+Example:
+
+const PI = 3.14;
+
+Attempting to change it causes an error.
+
+8️⃣ Primitive Types
+
+Basic data types in JS:
+
+Type	Example
+String	"Hello"
+Number	10
+Boolean	true / false
+Undefined	variable not assigned
+Null	intentionally empty
+
+Example:
+
+let age = 21;
+let name = "John";
+let isStudent = true;
+9️⃣ Dynamic Typing
+
+JavaScript is dynamically typed.
+
+This means variable types can change.
+
+Example:
+
+let value = 10;
+value = "hello";
+
+The type automatically changes.
+
+🔟 Objects
+
+Objects store key-value pairs.
+
+Example:
+
+let person = {
+  name: "John",
+  age: 25
+};
+
+Access values:
+
+person.name
+person.age
+
+Objects represent real-world entities.
+
+1️⃣1️⃣ Arrays
+
+Arrays store lists of values.
+
+Example:
+
+let numbers = [1, 2, 3];
+
+Access items:
+
+numbers[0]
+numbers[1]
+
+Arrays can store multiple types.
+
+1️⃣2️⃣ Functions
+
+Functions define reusable code blocks.
+
+Example:
+
+function greet() {
+  console.log("Hello");
+}
+
+Calling the function:
+
+greet();
+
+Functions can accept parameters.
+
+function greet(name) {
+  console.log("Hello " + name);
+}
+1️⃣3️⃣ Types of Functions
+Function Declaration
+function greet() {}
+Function Expression
+const greet = function() {}
+Arrow Function
+const greet = () => {
+  console.log("Hello");
+}
+
+Arrow functions are commonly used in modern JS.

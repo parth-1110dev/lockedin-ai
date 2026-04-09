@@ -1,0 +1,307 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="dark" />
+    <title>LockedIn - AI-Powered Productivity</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <div class="aurora" aria-hidden="true"></div>
+
+    <header class="nav">
+      <div class="nav-inner">
+        <div class="logo" aria-label="LockedIn">
+          LockedIn
+        </div>
+
+        <div class="nav-actions">
+          <a class="btn btn-outline" href="#" aria-label="Login">
+            Login
+          </a>
+          <a class="btn btn-outline" href="pricing.html" aria-label="Upgrade">
+            Upgrade
+          </a>
+          <a class="btn btn-primary" href="#" aria-label="Sign up">
+            Sign Up
+          </a>
+        </div>
+      </div>
+    </header>
+
+    <main class="hero">
+      <div class="hero-inner">
+        <div class="hero-content">
+          <div class="badge">AI-Powered Productivity</div>
+          <h1 class="title">LockedIn</h1>
+          <div class="tagline">Turn intention into execution.</div>
+          <p class="subtext">
+            An AI-powered focus system that helps you stay consistent, accountable,
+            and improve every day without excuses.
+          </p>
+
+          <form id="topicForm" class="learn-form">
+            <div class="input-glass">
+              <input
+                id="topicInput"
+                name="topic"
+                type="text"
+                placeholder="What would you like to learn today?"
+                autocomplete="off"
+              />
+              <button id="goBtn" class="arrow-btn" type="submit" aria-label="Go">
+                <svg width="18" height="18" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path
+                    d="M4 10H15"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                  />
+                  <path
+                    d="M10.5 5.5L15 10L10.5 14.5"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
+              </button>
+            </div>
+
+            <div id="hint" class="hint" aria-live="polite"></div>
+          </form>
+
+          <div class="topics" aria-label="Suggested topics">
+            <button class="topic-pill" type="button" data-topic="Productivity">
+              <span class="plus" aria-hidden="true">+</span>
+              Productivity
+            </button>
+            <button class="topic-pill" type="button" data-topic="Psychology">
+              <span class="plus" aria-hidden="true">+</span>
+              Psychology
+            </button>
+            <button class="topic-pill" type="button" data-topic="AI Basics">
+              <span class="plus" aria-hidden="true">+</span>
+              AI Basics
+            </button>
+            <button class="topic-pill" type="button" data-topic="Discipline">
+              <span class="plus" aria-hidden="true">+</span>
+              Discipline
+            </button>
+            <button class="topic-pill" type="button" data-topic="Communication Skills">
+              <span class="plus" aria-hidden="true">+</span>
+              Communication Skills
+            </button>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <section class="section section-features" aria-label="Execution Toolkit">
+      <div class="section-inner">
+        <h2 class="section-title">Your Personal Execution Toolkit</h2>
+        <p class="section-subtext">
+          Everything you need to go from scattered intent to consistent,
+          compounding action.
+        </p>
+
+        <div class="feature-grid">
+          <article class="feature-card">
+            <div class="feature-icon" aria-hidden="true">
+              <svg
+                width="22"
+                height="22"
+                viewBox="0 0 24 24"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M12 2C12 4.8 9.8 7 7 7"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                />
+                <path
+                  d="M12 2C12 4.8 14.2 7 17 7"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                />
+                <path
+                  d="M4 14c1.6-2.2 4.2-3.7 8-3.7s6.4 1.5 8 3.7"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                />
+                <path
+                  d="M7 20c1.5-2 3.3-3 5-3s3.5 1 5 3"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                />
+              </svg>
+            </div>
+            <h3 class="feature-title">AI Focus Coach</h3>
+            <p class="feature-description">
+              Your personal AI that adapts to your learning style, keeps you
+              accountable, and surfaces the right content at the right moment.
+            </p>
+          </article>
+
+          <article class="feature-card">
+            <div class="feature-icon" aria-hidden="true">
+              <svg
+                width="22"
+                height="22"
+                viewBox="0 0 24 24"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M7 3v2M17 3v2"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                />
+                <path
+                  d="M4 8h16"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                />
+                <path
+                  d="M6 5h12a2 2 0 0 1 2 2v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                />
+                <path
+                  d="M8.5 12.5h.01M12 12.5h.01M15.5 12.5h.01"
+                  stroke="currentColor"
+                  stroke-width="3"
+                  stroke-linecap="round"
+                />
+                <path
+                  d="M8.5 16h.01M12 16h.01"
+                  stroke="currentColor"
+                  stroke-width="3"
+                  stroke-linecap="round"
+                />
+              </svg>
+            </div>
+            <h3 class="feature-title">Dynamic Planner</h3>
+            <p class="feature-description">
+              An intelligent planner that schedules your deep-work sessions,
+              reading blocks, and reflection time automatically.
+            </p>
+          </article>
+
+          <article class="feature-card">
+            <div class="feature-icon" aria-hidden="true">
+              <svg
+                width="22"
+                height="22"
+                viewBox="0 0 24 24"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M12 2l8 4v6c0 5-3.4 9.7-8 10-4.6-.3-8-5-8-10V6l8-4z"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+                <path
+                  d="M9.5 12l1.7 1.7L15 10"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+            </div>
+            <h3 class="feature-title">Distraction Filter</h3>
+            <p class="feature-description">
+              Real-time focus protection that identifies and blocks
+              distractions before they break your flow state.
+            </p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section-steps" aria-label="How It Works">
+      <div class="section-inner">
+        <h2 class="section-title">How It Works</h2>
+        <p class="section-subtext">
+          Three steps between you and a sharper, more focused version of
+          yourself.
+        </p>
+
+        <div class="steps-grid">
+          <div class="step-card">
+            <div class="step-number" aria-hidden="true">1</div>
+            <div class="step-body">
+              <h3 class="step-title">Set Your Intention</h3>
+              <p class="step-text">
+                Tell LockedIn what you want to master — a skill, a book, or a
+                concept.
+              </p>
+            </div>
+          </div>
+
+          <div class="step-card">
+            <div class="step-number" aria-hidden="true">2</div>
+            <div class="step-body">
+              <h3 class="step-title">Execute Daily</h3>
+              <p class="step-text">
+                Follow AI-generated focus sessions designed around your schedule
+                and energy levels.
+              </p>
+            </div>
+          </div>
+
+          <div class="step-card">
+            <div class="step-number" aria-hidden="true">3</div>
+            <div class="step-body">
+              <h3 class="step-title">Track &amp; Level Up</h3>
+              <p class="step-text">
+                Review your streaks, insights, and growth. Compound progress
+                over time.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section-cta" aria-label="Final Call To Action">
+      <div class="cta-panel">
+        <h2 class="cta-title">Ready to get LockedIn?</h2>
+        <p class="cta-subtext">
+          Join thousands of builders, learners, and high-performers who
+          stopped making excuses and started making progress.
+        </p>
+
+        <div class="cta-actions">
+          <button id="startBtn" class="btn btn-primary cta-btn" type="button">
+            Start Your First Session
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <script src="./script.js"></script>
+  </body>
+</html>
+

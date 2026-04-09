@@ -1,0 +1,108 @@
+This is your Week 1 Builder Sprint.
+
+🚀 1️⃣ Your 7-Day Execution Plan (Week 1)
+
+Goal of this week:
+
+👉 understand how web UI works
+👉 create first visual version of your app
+👉 build momentum
+👉 feel like a builder (not learner)
+
+✅ DAY 1 — Understand Page Structure + Start UI
+
+Learn (40 min)
+Watch HTML basics (SuperSimpleDev — first part only)
+
+Build (40 min)
+Create:
+
+• app title
+• input: “What do you want to improve?”
+• button: Start Focus Session
+
+Don’t worry about styling.
+
+Just structure.
+
+✅ DAY 2 — CSS Basics + Layout
+
+Learn (30–40 min)
+CSS basics (colors, spacing, flexbox)
+
+Build (40–50 min)
+
+Style your page:
+
+• centered layout
+• calm background
+• focus button
+• input box styling
+
+Your app should feel real now.
+
+✅ DAY 3 — Timer UI
+
+Learn (30 min)
+Basic JavaScript + DOM
+
+Build (1 hr)
+
+Create:
+
+• countdown timer
+• start / pause button
+• session completed message
+
+This gives huge motivation.
+
+✅ DAY 4 — Topic Interaction
+
+Learn (20–30 min)
+DOM events
+
+Build (1 hr)
+
+When user types:
+
+👉 display topic on screen
+👉 show “Today you’ll focus on: ____”
+
+Now your app feels personal.
+
+✅ DAY 5 — Fake Chatbot UI
+
+We don’t integrate AI yet.
+
+Just UI.
+
+Build
+
+• chat input
+• message bubbles
+• send button
+• echo user message
+
+This prepares AI integration later.
+
+✅ DAY 6 — UX Polish Day
+
+Improve:
+
+• spacing
+• colors
+• fonts
+• button hover effects
+
+This builds design intuition.
+
+✅ DAY 7 — Reflection + Micro Upgrade
+
+Add:
+
+• session complete popup
+• motivational message after timer
+
+Then stop.
+
+No overbuilding.

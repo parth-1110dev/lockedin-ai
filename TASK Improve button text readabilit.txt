@@ -1,0 +1,24 @@
+TASK: Improve button text readability in the session UI.
+
+CONSTRAINTS:
+- Modify ONLY button-related CSS
+- Do NOT change layout, structure, or positioning
+- Do NOT rename classes or IDs
+- Do NOT touch JavaScript
+
+CHANGES REQUIRED:
+- Add or update:
+  line-height: 1.4;
+  letter-spacing: 0.3px;
+  font-size: 14px or 15px;
+- Ensure vertical centering using:
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+OUTPUT:
+- Update only the relevant CSS rules
+- Do not modify unrelated styles
+
+GOAL:
+Buttons should look clean, readable, and not vertically compressed.

@@ -1,0 +1,64 @@
+Your Updated Week 2 Plan
+
+Here’s the clean roadmap.
+
+Day 1–2
+
+Watch DOM tutorial until Event Listeners.
+
+Day 3
+
+Finish:
+
+Event listeners
+
+Event delegation
+
+Day 4
+
+Build a small mini project:
+
+Example:
+
+Input field
+Button
+Message appears when clicked
+Day 5
+
+Build a simple timer.
+
+Example:
+
+Start button
+Countdown from 25 minutes
+Day 6
+
+Watch the DOM course projects.
+
+Build one project if possible.
+
+Day 7
+
+Review.
+
+You should understand:
+
+DOM
+events
+element updates
+timers
+
+That’s enough.
+
+7️⃣ The Big Milestone After Week 2
+
+When you finish Week 2 you will know:
+
+HTML → page structure
+CSS → styling
+JavaScript → behavior
+DOM → interaction with the page
+
+This is literally the entire frontend foundation.
+
+Which means you’ll be ready to start building LockedIn.

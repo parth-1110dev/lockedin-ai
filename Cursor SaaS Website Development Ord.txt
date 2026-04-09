@@ -1,0 +1,8 @@
+Cursor SaaS Website Development Order:
+1. Landing Page (UI)
+2. App Dashboard UI
+3. JavaScript functionality
+4. Backend APIs
+5. Database integration
+6. AI integration
+7. Deployment

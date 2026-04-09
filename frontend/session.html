@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="dark" />
+    <title>LockedIn - Session</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+
+    <link rel="stylesheet" href="./session.css" />
+  </head>
+
+  <body>
+    <header class="topbar">
+      <div class="topbar-inner">
+        <div class="topbar-left" aria-hidden="true"></div>
+        <div class="topbar-timer" aria-live="polite">
+          <span id="timerDisplay" class="timer-display">25:00</span>
+        </div>
+        <div class="topbar-right">
+          <button id="exitBtn" class="exit-btn" type="button" aria-label="Exit session">
+            Exit
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <main class="session-main">
+      <section id="sessionScreen" class="screen">
+        <div class="content-wrapper">
+          <div class="content-card">
+            <div id="motivation" class="motivation" aria-live="polite">
+              <span id="motivationText">You're doing great</span>
+            </div>
+
+            <div class="topic-pill">
+              Topic:
+              <span id="topicDisplay" class="topic-value">—</span>
+            </div>
+
+            <article class="ai-output" aria-label="AI instructor output">
+              <div id="session-content" class="session-content"></div>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section id="completeScreen" class="screen screen-complete" hidden>
+        <div class="complete-card">
+          <h1 class="complete-title">Session Complete 🎯</h1>
+
+          <div class="rating-block" aria-label="Session rating">
+            <div class="rating-stars" role="radiogroup" aria-label="Select a rating from 1 to 5">
+              <button class="star-btn" type="button" data-value="1" aria-label="Rate 1 star">★</button>
+              <button class="star-btn" type="button" data-value="2" aria-label="Rate 2 stars">★</button>
+              <button class="star-btn" type="button" data-value="3" aria-label="Rate 3 stars">★</button>
+              <button class="star-btn" type="button" data-value="4" aria-label="Rate 4 stars">★</button>
+              <button class="star-btn" type="button" data-value="5" aria-label="Rate 5 stars">★</button>
+            </div>
+          </div>
+
+          <label for="feedbackBox" class="feedback-label">Optional feedback</label>
+          <textarea
+            id="feedbackBox"
+            class="feedback-box"
+            rows="4"
+            placeholder="What helped you stay focused?"
+          ></textarea>
+
+          <div class="complete-actions">
+            <button id="startNewBtn" class="btn btn-primary" type="button">
+              Start New Session
+            </button>
+            <button id="continueBtn" class="btn btn-outline" type="button">
+              Continue Learning
+            </button>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <script src="./session.js"></script>
+  </body>
+</html>
+

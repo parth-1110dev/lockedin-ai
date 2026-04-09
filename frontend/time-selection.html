@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="dark" />
+    <title>LockedIn - Time Selection</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+
+    <link rel="stylesheet" href="./time-selection.css" />
+  </head>
+  <body>
+    <div class="aurora" aria-hidden="true"></div>
+
+    <header class="nav">
+      <div class="nav-inner">
+        <div class="logo" aria-label="LockedIn">LockedIn</div>
+      </div>
+    </header>
+
+    <main class="page">
+      <div class="container">
+        <h1 class="title">How long do you want to focus?</h1>
+        <p class="subtext">Commit to your session. Stay locked in.</p>
+
+        <section class="panel" aria-label="Timer selector">
+          <div class="time-selector">
+            <button id="minusBtn" class="time-btn" type="button" aria-label="Decrease time">-</button>
+
+            <div class="time-display" aria-live="polite">
+              <span id="timeValue" class="time-value">25</span>
+              <span class="time-unit">min</span>
+            </div>
+
+            <button id="plusBtn" class="time-btn" type="button" aria-label="Increase time">+</button>
+          </div>
+
+          <div class="quick-options" aria-label="Quick options">
+            <button class="quick-btn" type="button" data-min="15">15 min</button>
+            <button class="quick-btn" type="button" data-min="20">20 min</button>
+            <button class="quick-btn" type="button" data-min="30">30 min</button>
+          </div>
+
+          <div
+            id="upgradeContainer"
+            class="time-limit-message"
+            style="display: none"
+            aria-hidden="true"
+          >
+            <div id="upgradeText" class="time-limit-text"></div>
+            <button id="upgradeButton" class="btn btn-outline" type="button">
+              Upgrade
+            </button>
+          </div>
+        </section>
+
+        <div class="cta-row" role="group" aria-label="Session actions">
+          <button
+            id="changeTopicBtn"
+            class="btn btn-outline change-topic-btn"
+            type="button"
+            aria-label="← Change Topic"
+          >
+            <span class="change-topic-circle" aria-hidden="true">
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 20 20"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M11.5 4.5L6 10L11.5 15.5"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+            </span>
+            <span class="change-topic-text">Change Topic</span>
+          </button>
+
+          <button id="startSessionBtn" class="btn btn-primary" type="button">
+            Start Session
+          </button>
+        </div>
+      </div>
+    </main>
+
+    <script src="./time-selection.js"></script>
+  </body>
+</html>
+

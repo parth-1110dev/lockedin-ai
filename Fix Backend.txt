@@ -1,0 +1,100 @@
+Fix Backend:
+uvicorn main:app --host 192.168.1.16 --port 8000 --reload
+uvicorn main:app --reload
+
+Strait of Hormuz and the war on Iran by USA and Israel
+
+
+Polish session UI text and motivation placement in LockedIn.
+
+GOAL:
+1. Fix button text readability (not compressed)
+2. Move motivation text to visible area during session
+3. Fix formatting issue in post-session upgrade message
+
+---
+
+PART 1 — FIX BUTTON TEXT (READABILITY)
+
+Problem:
+Button text looks vertically compressed / tight
+
+Fix:
+
+- Increase line height:
+  line-height: 1.4;
+
+- Add slight letter spacing:
+  letter-spacing: 0.3px;
+
+- Ensure font size is readable:
+  font-size: 14px or 15px;
+
+- Ensure text is vertically centered:
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+Result:
+Buttons should feel clean, breathable, and premium
+
+---
+
+PART 2 — FIX MOTIVATION TEXT POSITION (VERY IMPORTANT)
+
+Problem:
+Motivational text appears at bottom of content → not visible
+
+Fix:
+
+- Move motivation text to TOP of session content (above AI content)
+
+Structure:
+
+[ Motivation Text ]
+[ Timer ]
+[ AI Content ]
+
+Example motivation text:
+"Stay focused. You're doing great. Keep going 🔥"
+
+- Optionally rotate messages every few minutes (if simple, keep static for now)
+
+Result:
+User sees motivation WITHOUT scrolling
+
+---
+
+PART 3 — FIX BULLET POINT FORMATTING (POST SESSION)
+
+Problem:
+Bullet point appears next to "Pro" instead of below
+
+Fix:
+
+Ensure proper line break formatting:
+
+"Unlock more with LockedIn Pro:
+
+• Longer sessions  
+• Deeper AI explanations  
+• Better learning structure"
+
+- Use proper <br> or block elements instead of inline text
+
+Result:
+Clean, properly aligned bullet points
+
+---
+
+IMPORTANT:
+- Do NOT change logic
+- Do NOT break layout
+- Keep UI minimal and premium
+
+---
+
+FINAL RESULT:
+- Clean button text
+- Visible motivation (higher engagement)
+- Properly formatted upgrade message

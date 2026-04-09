@@ -1,0 +1,257 @@
+🧠 1️⃣ Ground Rule Before Starting
+
+You are NOT learning web dev to become a web developer.
+
+You are learning it as a tool to build AI products.
+
+So:
+👉 skip unnecessary theory
+👉 focus on practical understanding
+👉 build continuously
+
+⏱️ 2️⃣ Time Commitment Plan
+
+Since you’re already doing:
+• ML learning
+• DSA revision
+
+Your daily app-building time = 60–90 minutes
+
+Split:
+
+40 min learning
+40 min building
+10 min debugging/reflection
+
+
+This prevents passive learning.
+
+📅 3️⃣ The Weekly Execution System
+🔥 WEEK 1 — How Websites Actually Work
+🎯 Goal
+
+Understand frontend basics + create your first UI.
+
+📚 Learn From (BEST beginner resources)
+
+👉 YouTube: SuperSimpleDev HTML + CSS full course
+👉 YouTube: JavaScript for beginners — Programming with Mosh (basics only)
+
+These are extremely beginner friendly and fast.
+
+Avoid long 10-hour courses.
+
+🛠️ Build This Week
+
+Your app landing page:
+
+✅ app name
+✅ “set your focus goal” input
+✅ timer UI
+✅ fake chatbot box
+
+No backend yet.
+
+Just UI.
+
+🧠 What you learn subconsciously
+
+• layout thinking
+• UI structure
+• DOM interaction
+
+🔥 WEEK 2 — JavaScript + Interaction
+🎯 Goal
+
+Make your UI functional.
+
+📚 Learn
+
+👉 JavaScript DOM manipulation (SuperSimpleDev playlist)
+
+🛠️ Build
+
+✅ working timer
+✅ start / stop focus session
+✅ user enters topic → display on screen
+✅ simple chatbot UI that echoes messages
+
+This will feel amazing.
+
+You’ll see your app alive.
+
+🔥 WEEK 3 — Python Backend (FastAPI)
+
+Since you already use Python for ML, this will be easy.
+
+📚 Learn
+
+👉 YouTube: FastAPI crash course (freeCodeCamp or similar short tutorial)
+
+Focus only on:
+• creating API
+• GET / POST requests
+• JSON
+
+🛠️ Build
+
+✅ backend server
+✅ API to save tasks
+✅ frontend calls backend
+
+This is your first full-stack moment.
+
+Huge confidence boost.
+
+🔥 WEEK 4 — Database + Real Users
+📚 Learn
+
+👉 Supabase beginner tutorial (YouTube)
+
+Focus only on:
+• tables
+• authentication
+• storing data
+
+🛠️ Build
+
+✅ signup/login
+✅ saving tasks to DB
+✅ saving focus sessions
+
+Now your app becomes real SaaS.
+
+🔥 WEEK 5 — AI Integration (Most exciting)
+
+This is where your ML curiosity pays off.
+
+📚 Learn
+
+👉 OpenAI API basics (short docs + YouTube demo)
+
+Focus on:
+• sending prompt
+• receiving response
+• controlling output
+
+🛠️ Build
+
+✅ chatbot that explains topic
+✅ AI breaks topic into daily tasks
+✅ AI generates quizzes
+
+Now your app becomes special.
+
+🔥 WEEK 6 — Behavior + Enforcement
+📚 Learn
+
+• notifications
+• habit psychology (you already like this topic)
+
+🛠️ Build
+
+✅ streak tracking
+✅ motivational messages
+✅ session reminders
+✅ soft enforcement system
+
+This is your differentiator.
+
+🚀 4️⃣ Your FIRST Mini Project (Start Today)
+
+Build:
+
+👉 landing page
+👉 input: “What do you want to improve?”
+👉 timer UI
+👉 fake chatbot UI
+
+This is day 1 execution.
+
+Not learning.
+
+Building.
+
+🧩 5️⃣ Feature Breakdown Into Tiny Tasks
+
+This prevents overwhelm.
+
+🟢 Core
+
+• login
+• set goal
+• timer
+• AI chat
+
+🟡 Secondary
+
+• progress tracking
+• reminders
+• streak
+
+🔵 Later
+
+• gamification
+• social accountability
+• analytics
+
+We ignore later features for MVP.
+
+🎨 6️⃣ Basic Wireframe Idea
+
+Think like this:
+
+🏠 Home Screen
+
+• today’s focus goal
+• start focus button
+• streak count
+
+💬 AI Screen
+
+• chat with tutor
+• topic breakdown
+• quizzes
+
+📊 Progress Screen
+
+• weekly focus time
+• streak graph
+
+That’s enough for MVP.
+
+💰 7️⃣ AI Cost Protection Strategy (Very Important)
+
+Since you’re building SaaS:
+
+Free users:
+👉 limited AI messages
+👉 shorter responses
+
+Paid users:
+👉 unlimited
+👉 deeper explanations
+
+This protects your API cost.
+
+🧠 8️⃣ Biggest Beginner Mistakes (Avoid These)
+
+❌ watching tutorials without building
+❌ trying to make UI perfect
+❌ adding too many features early
+❌ jumping to mobile app too soon
+
+You will stay focused on web MVP.
+
+🔥 9️⃣ Motivation For YOU Personally
+
+This project is not random.
+
+It connects to:
+
+• your ML journey
+• your psychology curiosity
+• your SaaS automation goal
+• your habit discipline struggles (very relatable product)
+
+This increases probability of success massively.

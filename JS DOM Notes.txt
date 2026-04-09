@@ -1,0 +1,229 @@
+JavaScript DOM Cheat Sheet:
+1️⃣ What is the DOM
+
+DOM = Document Object Model
+
+It is the browser’s representation of your HTML page as a tree structure that JavaScript can interact with.
+
+HTML:
+
+<h1>Hello</h1>
+<button>Start</button>
+
+Browser converts it into:
+
+Document
+ └ Body
+     ├ H1
+     └ Button
+
+JavaScript can read, modify, create, or delete these elements.
+
+2️⃣ DOM Tree Analogy
+
+The DOM is structured like a family tree.
+
+Example:
+
+Document
+ └ html
+     └ body
+         ├ div
+         │   └ p
+         └ button
+
+Terms:
+
+Term	Meaning
+Parent	element above
+Child	element inside
+Sibling	elements on same level
+3️⃣ Selecting Elements in the DOM
+
+JavaScript must select elements first before modifying them.
+
+Common methods:
+
+document.getElementById("id")
+document.querySelector("selector")
+document.querySelectorAll("selector")
+
+Examples:
+
+const button = document.getElementById("startBtn");
+
+const title = document.querySelector("h1");
+
+const items = document.querySelectorAll(".item");
+4️⃣ Styling an Element
+
+You can modify CSS styles using JavaScript.
+
+Example:
+
+element.style.color = "red";
+element.style.backgroundColor = "black";
+
+Example:
+
+const title = document.querySelector("h1");
+title.style.color = "blue";
+5️⃣ Creating Elements
+
+JavaScript can create new HTML elements.
+
+Example:
+
+const newDiv = document.createElement("div");
+
+This creates an element in memory, not yet visible on the page.
+
+6️⃣ Adding Elements to the Page
+
+Once created, elements must be added to the DOM.
+
+Example:
+
+parent.appendChild(newElement);
+
+Example:
+
+const container = document.querySelector(".container");
+const newItem = document.createElement("p");
+
+container.appendChild(newItem);
+7️⃣ Modifying Text Content
+
+Change text inside elements.
+
+Example:
+
+element.textContent = "Hello World";
+
+or
+
+element.innerText = "Hello";
+
+Example:
+
+document.querySelector("h1").textContent = "Welcome";
+8️⃣ Modifying Attributes & Classes
+
+Change attributes like src, href, etc.
+
+Example:
+
+element.setAttribute("src", "image.png");
+
+Working with classes:
+
+element.classList.add("active");
+element.classList.remove("active");
+element.classList.toggle("active");
+9️⃣ Removing Elements
+
+Elements can be removed from the DOM.
+
+Example:
+
+element.remove();
+
+Example:
+
+const item = document.querySelector(".item");
+item.remove();
+🔟 DOM Traversing
+
+Moving between elements in the DOM tree.
+
+Examples:
+
+element.parentNode
+element.children
+element.firstElementChild
+element.lastElementChild
+element.nextElementSibling
+element.previousElementSibling
+
+Used to navigate related elements.
+
+1️⃣1️⃣ Event Listeners
+
+Event listeners detect user interactions.
+
+Example:
+
+element.addEventListener("click", function() {
+  console.log("Clicked");
+});
+
+Common events:
+
+Event	Trigger
+click	mouse click
+mouseover	mouse hover
+keydown	key pressed
+submit	form submitted
+1️⃣2️⃣ Event Listener Example
+
+Example:
+
+const button = document.querySelector("button");
+
+button.addEventListener("click", function() {
+  alert("Button clicked!");
+});
+
+When the user clicks the button, the function runs.
+
+1️⃣3️⃣ Event Propagation
+
+Events travel through the DOM in two phases:
+
+Capturing phase
+Target phase
+Bubbling phase
+
+Example:
+
+Body
+ └ Div
+     └ Button
+
+Clicking button triggers events in this order:
+
+Body → Div → Button → Div → Body
+
+This is called event bubbling.
+
+1️⃣4️⃣ Event Delegation
+
+Instead of adding listeners to many elements, attach one listener to a parent element.
+
+Example:
+
+parent.addEventListener("click", function(event) {
+  if (event.target.matches("button")) {
+    console.log("Button clicked");
+  }
+});
+
+Benefits:
+
+fewer event listeners
+
+better performance
+
+works with dynamically created elements
+
+🧠 Key DOM Operations Summary
+
+Most DOM work revolves around:
+
+Select element
+Modify element
+Create element
+Remove element
+Handle events
+
+These few operations power most interactive websites.

@@ -1,0 +1,161 @@
+TEST CONDITIONS:
+
+🔥 MASTER TEST CHECKLIST (USE THIS)
+🟢 A. BASIC FLOW (START → END)
+
+Test this 3–5 times:
+
+☐ Enter topic manually  
+☐ Select time (15, 20, 30)  
+☐ Start session  
+☐ AI loads properly  
+☐ Timer runs correctly  
+☐ Session ends → feedback page  
+☐ Upgrade prompt shows  
+🟢 B. TOPIC INPUT TEST
+
+Test variations:
+
+☐ "machine learning"  
+☐ "how to improve focus"  
+☐ random topic  
+☐ long sentence topic  
+☐ empty input → should block  
+
+🟢 C. TIME LIMIT TEST (CRITICAL)
+Free plan:
+☐ Can select 5–30 min  
+☐ Cannot go above 30  
+☐ "+" button stops working at 30  
+☐ Upgrade message shows  
+After upgrade (manually set plan):
+localStorage.setItem("userPlan", "pro");
+☐ Max goes to 60  
+☐ Works correctly  
+localStorage.setItem("userPlan", "elite");
+☐ Max goes to 90  
+☐ Works correctly  
+🟢 D. SESSION LIMIT TEST (VERY IMPORTANT)
+
+Free plan:
+
+☐ Complete 5 sessions  
+☐ 6th session blocked  
+☐ Upgrade message shown  
+
+👉 THIS is a revenue trigger — must work perfectly
+
+🟢 E. AI OUTPUT TEST
+
+Test:
+
+☐ 5 min vs 30 min → length difference  
+☐ Same topic → structured output  
+☐ No irrelevant content  
+☐ No repeated template feeling  
+🟢 F. RATE LIMIT TEST (IMPORTANT)
+
+Try:
+
+☐ Click start multiple times quickly  
+☐ Spam refresh  
+
+Expected:
+
+☐ Button disables  
+☐ OR rate limit message appears  
+🟢 G. ERROR HANDLING TEST
+
+Simulate:
+
+☐ Stop backend → try session  
+☐ API error → handled properly  
+☐ No infinite loading  
+🟢 H. UI / UX TEST
+
+Check:
+
+☐ Buttons aligned  
+☐ No weird spacing  
+☐ Mobile view usable  
+☐ Text readable  
+🟢 I. NAVIGATION TEST
+☐ Home → timer → session → feedback → back  
+☐ Pricing page navigation works  
+☐ Upgrade buttons redirect correctly  
+🔥 4️⃣ EDGE CASE TEST (MOST PEOPLE SKIP THIS)
+Try to break your app:
+☐ Enter nonsense topic  
+☐ Enter very long text  
+☐ Refresh mid-session  
+☐ Click back button  
+☐ Try multiple tabs  
+
+👉 Your goal:
+
+Nothing should crash
+💰 5️⃣ How Many Sessions You Should Use
+
+You said:
+
+~50 sessions
+
+👉 PERFECT
+
+Suggested distribution:
+10 → basic flow  
+10 → edge cases  
+10 → plan switching  
+10 → AI quality  
+10 → random stress testing  
+
+👉 You’ll still have tons of credits left
+
+🧠 6️⃣ IMPORTANT TESTING RULE
+
+Don’t just check:
+
+“Does it work?”
+
+Check:
+
+“Does it feel smooth?”
+🚀 7️⃣ WHEN YOU ARE DONE TESTING
+
+You should be confident that:
+
+No major bugs  
+No confusion  
+No broken flows  
+
+Mobile Testing (Your second question)
+🟢 EASIEST WAY (NO SETUP)
+
+Use Chrome:
+
+👉 Right click → Inspect
+👉 Click mobile icon (📱)
+👉 Choose device (iPhone, Pixel)
+
+👉 This simulates:
+
+screen size  
+touch behavior  
+responsive layout
+
+🟢 REAL MOBILE TEST (BEST)
+
+Once API works:
+
+Find your IP:
+ipconfig
+
+Example:
+
+192.168.1.16
+Run backend:
+uvicorn main:app --host 0.0.0.0 --port 8000
+Open on phone:
+http://192.168.1.5:8000
+
+👉 Your phone & laptop must be on same WiFi
