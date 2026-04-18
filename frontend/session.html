@@ -13,15 +13,17 @@
       rel="stylesheet"
     />
 
+    <link rel="stylesheet" href="./style.css" />
     <link rel="stylesheet" href="./session.css" />
   </head>
 
   <body>
+    <div class="aurora" aria-hidden="true"></div>
     <header class="topbar">
       <div class="topbar-inner">
         <div class="topbar-left" aria-hidden="true"></div>
         <div class="topbar-timer" aria-live="polite">
-          <span id="timerDisplay" class="timer-display">25:00</span>
+          <span id="timerDisplay" class="timer-display">00:00</span>
         </div>
         <div class="topbar-right">
           <button id="exitBtn" class="exit-btn" type="button" aria-label="Exit session">
@@ -52,6 +54,27 @@
       </section>
 
       <section id="completeScreen" class="screen screen-complete" hidden>
+        <button id="homeBtn" class="btn btn-outline complete-home-btn" type="button" aria-label="Go to homepage" title="Home">
+          <span class="complete-home-circle" aria-hidden="true">
+            <svg
+              class="complete-home-icon"
+              width="16"
+              height="16"
+              viewBox="0 0 20 20"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M11.5 4.5L6 10L11.5 15.5"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </span>
+          <span class="complete-home-text">Home</span>
+        </button>
         <div class="complete-card">
           <h1 class="complete-title">Session Complete 🎯</h1>
 
@@ -81,6 +104,17 @@
               Continue Learning
             </button>
           </div>
+
+          <section class="knowledge-pack-section" aria-label="Generate knowledge pack">
+            <hr class="divider" />
+            <h2 class="knowledge-pack-title">Generate Your Knowledge Pack 📦</h2>
+            <p class="knowledge-pack-description">
+              Turn this session into structured notes, revision sheets & tests.
+            </p>
+            <button id="generateNotesBtn" class="btn btn-primary knowledge-pack-btn" type="button">
+              Generate Notes
+            </button>
+          </section>
         </div>
       </section>
     </main>

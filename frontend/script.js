@@ -4,6 +4,8 @@ const hint = document.getElementById("hint");
 const startBtn = document.getElementById("startBtn");
 
 const STORAGE_TOPIC_KEY = "lockedin_selected_topic";
+const STORAGE_EXPLANATION_MODE_KEY = "lockedin_explanation_mode";
+const STORAGE_EXPLANATION_TOPIC_KEY = "lockedin_explanation_mode_topic";
 
 const topicButtons = document.querySelectorAll(".topic-pill");
 
@@ -17,6 +19,14 @@ function setSingleTopicInInput(topic) {
 }
 
 function goToTimeSelectionWithTopic(topic) {
+  const previousTopic = (window.localStorage.getItem(STORAGE_TOPIC_KEY) || "").trim();
+  const nextTopic = String(topic || "").trim();
+
+  if (previousTopic && previousTopic !== nextTopic) {
+    window.localStorage.removeItem(STORAGE_EXPLANATION_MODE_KEY);
+    window.localStorage.removeItem(STORAGE_EXPLANATION_TOPIC_KEY);
+  }
+
   window.localStorage.setItem(STORAGE_TOPIC_KEY, topic);
   window.location.href = "time-selection.html";
 }

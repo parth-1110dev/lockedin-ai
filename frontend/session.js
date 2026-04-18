@@ -1,7 +1,9 @@
 const STORAGE_TOPIC_KEY = "lockedin_selected_topic";
-const STORAGE_MINUTES_KEY = "lockedin_selected_minutes";
 const STORAGE_PLAN_KEY = "userPlan";
 const STORAGE_CLIENT_RATE_KEY = "lockedin_generate_rate_window";
+const STORAGE_EXPLANATION_MODE_KEY = "lockedin_explanation_mode";
+const STORAGE_EXPLANATION_TOPIC_KEY = "lockedin_explanation_mode_topic";
+const STORAGE_SESSION_CONTENT_KEY = "lockedin_session_content";
 
 const _host = window.location.hostname;
 const API_BASE =
@@ -33,12 +35,16 @@ const motivationEl = document.getElementById("motivationText");
 
 const starButtons = document.querySelectorAll(".star-btn");
 const feedbackBox = document.getElementById("feedbackBox");
+const homeBtn = document.getElementById("homeBtn");
 const startNewBtn = document.getElementById("startNewBtn");
 const continueBtn = document.getElementById("continueBtn");
+const generateNotesBtn = document.getElementById("generateNotesBtn");
+const knowledgePackModal = document.createElement("div");
 
 let intervalId = null;
 let motivationIntervalId = null;
-let remainingSeconds = 25 * 60;
+let remainingSeconds = 0;
+let completedSeconds = 0;
 let rating = 0;
 
 function clamp(value, lower, upper) {
@@ -58,9 +64,54 @@ function setMotivation(message) {
   motivationEl.textContent = message;
 }
 
+function clearTimerIntervals() {
+  if (intervalId) {
+    clearInterval(intervalId);
+    intervalId = null;
+  }
+
+  if (motivationIntervalId) {
+    clearInterval(motivationIntervalId);
+    motivationIntervalId = null;
+  }
+}
+
+function clearCountdownInterval() {
+  if (intervalId) {
+    clearInterval(intervalId);
+    intervalId = null;
+  }
+}
+
+function resetSessionViewState() {
+  if (sessionScreen) {
+    sessionScreen.hidden = true;
+    sessionScreen.setAttribute("aria-hidden", "true");
+    if ("inert" in sessionScreen) {
+      sessionScreen.inert = true;
+    }
+  }
+
+  if (completeScreen) {
+    completeScreen.hidden = false;
+    completeScreen.removeAttribute("aria-hidden");
+    completeScreen.style.pointerEvents = "auto";
+    completeScreen.style.position = "relative";
+    completeScreen.style.zIndex = "20";
+    if ("inert" in completeScreen) {
+      completeScreen.inert = false;
+    }
+  }
+
+  if (startNewBtn) startNewBtn.disabled = false;
+  if (continueBtn) continueBtn.disabled = false;
+}
+
 function showCompleteScreen() {
-  if (intervalId) clearInterval(intervalId);
-  if (motivationIntervalId) clearInterval(motivationIntervalId);
+  if (remainingSeconds > 0) {
+    completedSeconds = remainingSeconds;
+  }
+  clearTimerIntervals();
 
   document.body.classList.add("session--complete");
 
@@ -68,8 +119,7 @@ function showCompleteScreen() {
   remainingSeconds = 0;
   if (timerDisplayEl) timerDisplayEl.textContent = formatTime(0);
 
-  if (sessionScreen) sessionScreen.hidden = true;
-  if (completeScreen) completeScreen.hidden = false;
+  resetSessionViewState();
 
   renderCompletionUpgradeConversion();
 }
@@ -110,9 +160,7 @@ function renderCompletionUpgradeConversion() {
   const actionsEl = document.createElement("div");
   actionsEl.className = "complete-upgrade-actions";
 
-  // Derive completed minutes for heading (fallback to rounded timer if needed).
-  const completedMinutes =
-    Math.max(1, Math.round(remainingSeconds / 60)) || 1;
+  const completedMinutes = Math.max(1, Math.round(completedSeconds / 60));
 
   titleEl.textContent = `You just completed ${completedMinutes} minutes 🚀`;
   introEl.textContent = "You're building real consistency. Most people quit — you're not.";
@@ -157,13 +205,20 @@ function renderCompletionUpgradeConversion() {
 function startTimer() {
   if (!timerDisplayEl) return;
 
+  clearCountdownInterval();
   timerDisplayEl.textContent = formatTime(remainingSeconds);
+
+  if (remainingSeconds <= 0) {
+    showCompleteScreen();
+    return;
+  }
 
   intervalId = window.setInterval(() => {
     remainingSeconds = Math.max(0, remainingSeconds - 1);
     timerDisplayEl.textContent = formatTime(remainingSeconds);
 
     if (remainingSeconds <= 0) {
+      clearTimerIntervals();
       showCompleteScreen();
     }
   }, 1000);
@@ -209,9 +264,11 @@ function initNavigation() {
     });
   }
 
-  if (upgradeBtn) {
-    upgradeBtn.addEventListener("click", () => {
-      window.location.href = "pricing.html";
+  if (homeBtn) {
+    homeBtn.addEventListener("click", () => {
+      const isFileContext = window.location.protocol === "file:";
+      const target = isFileContext ? "./index.html" : "/";
+      window.open(target, "_self");
     });
   }
 
@@ -226,10 +283,81 @@ function initNavigation() {
       window.location.href = "index.html";
     });
   }
+
+  if (generateNotesBtn) {
+    generateNotesBtn.addEventListener("click", handleGenerateNotes);
+  }
 }
 
 function openPricing() {
   window.location.href = "pricing.html";
+}
+
+function setupKnowledgePackModal() {
+  knowledgePackModal.id = "kpUpgradeModal";
+  knowledgePackModal.className = "modal-overlay";
+  knowledgePackModal.setAttribute("aria-hidden", "true");
+  knowledgePackModal.setAttribute("role", "dialog");
+  knowledgePackModal.setAttribute("aria-modal", "true");
+  knowledgePackModal.setAttribute("aria-labelledby", "kpUpgradeTitle");
+
+  knowledgePackModal.innerHTML = `
+    <div class="modal-card">
+      <h2 id="kpUpgradeTitle">Unlock Knowledge Pack Generator</h2>
+      <p>
+        Convert your session into structured notes and revision sheets with Pro or Elite plans.
+      </p>
+      <div class="modal-actions">
+        <button id="kpUpgradeNowBtn" class="btn btn-primary" type="button">Upgrade</button>
+        <button id="kpUpgradeCloseBtn" class="btn btn-outline" type="button">Not Now</button>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(knowledgePackModal);
+
+  const upgradeNowBtn = document.getElementById("kpUpgradeNowBtn");
+  const upgradeCloseBtn = document.getElementById("kpUpgradeCloseBtn");
+
+  if (upgradeNowBtn) {
+    upgradeNowBtn.addEventListener("click", () => {
+      window.location.href = "pricing.html";
+    });
+  }
+
+  if (upgradeCloseBtn) {
+    upgradeCloseBtn.addEventListener("click", () => {
+      closeKnowledgePackModal();
+    });
+  }
+
+  knowledgePackModal.addEventListener("click", (event) => {
+    if (event.target === knowledgePackModal) {
+      closeKnowledgePackModal();
+    }
+  });
+}
+
+function openKnowledgePackModal() {
+  knowledgePackModal.removeAttribute("aria-hidden");
+  knowledgePackModal.style.display = "flex";
+}
+
+function closeKnowledgePackModal() {
+  knowledgePackModal.setAttribute("aria-hidden", "true");
+  knowledgePackModal.style.display = "none";
+}
+
+function handleGenerateNotes() {
+  const plan = getUserPlan();
+
+  if (plan === "free") {
+    openKnowledgePackModal();
+    return;
+  }
+
+  // Pro or Elite: navigate to knowledge pack page
+  window.location.href = "knowledge-pack.html";
 }
 
 function clearSessionContent() {
@@ -326,6 +454,9 @@ function renderSessionMarkdown(markdown) {
   clearSessionContent();
   resetSessionContentLayout();
   sessionContentEl.innerHTML = markdownToHtml(markdown);
+
+  // Store session content for knowledge pack generation
+  window.localStorage.setItem(STORAGE_SESSION_CONTENT_KEY, markdown);
 }
 
 function renderSessionPlainText(
@@ -375,9 +506,13 @@ function renderSessionMessageWithUpgrade(message, upgradeLabel) {
 
 function getPlanMaxMinutes(plan) {
   if (plan === "free") return 30;
-  if (plan === "pro") return 60;
-  if (plan === "elite") return 90;
+  if (plan === "pro") return 45;
+  if (plan === "elite") return 60;
   return 30;
+}
+
+function getPlanSessionMinutes(plan) {
+  return getPlanMaxMinutes(plan);
 }
 
 function getTodayKey() {
@@ -443,7 +578,7 @@ function clientRateAllowAndRecord() {
 
 let generateRequestInFlight = false;
 
-async function fetchAiSessionContent(topic, minutes, plan) {
+async function fetchAiSessionContent(topic, minutes, plan, explanationMode) {
   if (generateRequestInFlight) {
     return;
   }
@@ -460,14 +595,20 @@ async function fetchAiSessionContent(topic, minutes, plan) {
   renderSessionPlainText("Generating your session...", { textAlign: "center" });
 
   try {
+    const payload = {
+      topic,
+      duration: minutes,
+      plan,
+    };
+
+    if (explanationMode) {
+      payload.explanation_mode = explanationMode;
+    }
+
     const response = await window.fetch(`${API_BASE}/generate`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        topic,
-        duration: minutes,
-        plan,
-      }),
+      body: JSON.stringify(payload),
     });
 
     const data = await response.json().catch(() => ({}));
@@ -507,10 +648,13 @@ async function fetchAiSessionContent(topic, minutes, plan) {
 function initFromStorage() {
   const plan = getUserPlan();
   const selectedTopic = window.localStorage.getItem(STORAGE_TOPIC_KEY) || "";
-  const selectedTimeRaw = window.localStorage.getItem(STORAGE_MINUTES_KEY) || "25";
-  const selectedTimeParsed = Number.parseInt(selectedTimeRaw, 10);
+  const explanationTopic = (window.localStorage.getItem(STORAGE_EXPLANATION_TOPIC_KEY) || "").trim();
+  const savedExplanationMode = (window.localStorage.getItem(STORAGE_EXPLANATION_MODE_KEY) || "").trim();
+  const explanationMode = explanationTopic && explanationTopic === selectedTopic.trim()
+    ? savedExplanationMode
+    : "";
   const planMaxMinutes = getPlanMaxMinutes(plan);
-  const requestedMinutes = Number.isNaN(selectedTimeParsed) ? 25 : selectedTimeParsed;
+  const requestedMinutes = getPlanSessionMinutes(plan);
 
   // FREE plan: block attempts > 30 minutes (even if a previous plan stored a higher value).
   if (plan === "free" && requestedMinutes > planMaxMinutes) {
@@ -523,6 +667,7 @@ function initFromStorage() {
   const safeMinutes = clamp(requestedMinutes, minMinutes, planMaxMinutes);
 
   remainingSeconds = safeMinutes * 60;
+  completedSeconds = remainingSeconds;
 
   document.body.classList.remove("session--complete");
 
@@ -539,13 +684,37 @@ function initFromStorage() {
     return false;
   }
 
-  fetchAiSessionContent(selectedTopic, safeMinutes, plan);
+  fetchAiSessionContent(selectedTopic, safeMinutes, plan, explanationMode);
   return true;
 }
 
-const sessionAllowed = initFromStorage();
+function shouldOpenFeedbackViewFromQuery() {
+  const params = new URLSearchParams(window.location.search);
+  return params.get("view") === "feedback";
+}
+
+function initFeedbackView() {
+  clearTimerIntervals();
+  remainingSeconds = 0;
+  completedSeconds = 0;
+  if (timerDisplayEl) timerDisplayEl.textContent = formatTime(0);
+  document.body.classList.add("session--complete");
+  resetSessionViewState();
+  renderCompletionUpgradeConversion();
+}
+
+const forceFeedbackView = shouldOpenFeedbackViewFromQuery();
+const sessionAllowed = forceFeedbackView ? false : initFromStorage();
 initStars();
 initNavigation();
+setupKnowledgePackModal();
+
+if (forceFeedbackView) {
+  initFeedbackView();
+}
+
+window.addEventListener("beforeunload", clearTimerIntervals);
+
 if (sessionAllowed) {
   startMotivation();
   startTimer();

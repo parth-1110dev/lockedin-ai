@@ -34,7 +34,7 @@
             <button id="minusBtn" class="time-btn" type="button" aria-label="Decrease time">-</button>
 
             <div class="time-display" aria-live="polite">
-              <span id="timeValue" class="time-value">25</span>
+              <span id="timeValue" class="time-value">30</span>
               <span class="time-unit">min</span>
             </div>
 
@@ -46,6 +46,61 @@
             <button class="quick-btn" type="button" data-min="20">20 min</button>
             <button class="quick-btn" type="button" data-min="30">30 min</button>
           </div>
+
+          <section class="explain-section" aria-label="Choose explanation style">
+            <h2 class="explain-title">Choose Explanation Style (Optional)</h2>
+            <div class="explain-options" role="radiogroup" aria-label="Explanation style options">
+              <button
+                class="explain-btn"
+                type="button"
+                data-mode="beginner_friendly"
+                role="radio"
+                aria-checked="false"
+              >
+                Beginner Friendly
+              </button>
+              <button
+                class="explain-btn"
+                type="button"
+                data-mode="like_im_5"
+                role="radio"
+                aria-checked="false"
+              >
+                Like I'm 5
+              </button>
+              <button
+                class="explain-btn"
+                type="button"
+                data-mode="real_world_analogies"
+                role="radio"
+                aria-checked="false"
+              >
+                Real-World Analogies
+              </button>
+              <button
+                class="explain-btn explain-btn-premium"
+                type="button"
+                data-mode="technical_deep_dive"
+                data-premium="true"
+                role="radio"
+                aria-checked="false"
+              >
+                <span class="lock-icon" aria-hidden="true">🔒</span>
+                Technical Deep Dive
+              </button>
+              <button
+                class="explain-btn explain-btn-premium"
+                type="button"
+                data-mode="exam_focused"
+                data-premium="true"
+                role="radio"
+                aria-checked="false"
+              >
+                <span class="lock-icon" aria-hidden="true">🔒</span>
+                Exam Focused
+              </button>
+            </div>
+          </section>
 
           <div
             id="upgradeContainer"
@@ -93,6 +148,19 @@
         </div>
       </div>
     </main>
+
+    <div id="explainUpgradeModal" class="modal-overlay" hidden aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="explainUpgradeTitle">
+      <div class="modal-card">
+        <h2 id="explainUpgradeTitle">Unlock Premium Explanation Styles</h2>
+        <p>
+          Technical Deep Dive and Exam Focused are available on Pro and Elite plans.
+        </p>
+        <div class="modal-actions">
+          <button id="explainUpgradeNowBtn" class="btn btn-primary" type="button">Upgrade</button>
+          <button id="explainUpgradeCloseBtn" class="btn btn-outline" type="button">Not Now</button>
+        </div>
+      </div>
+    </div>
 
     <script src="./time-selection.js"></script>
   </body>

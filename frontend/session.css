@@ -6,7 +6,7 @@
   --text: #ffffff;
   --text-secondary: #b8b8b8;
 
-  --glass-bg: rgba(255, 255, 255, 0.06);
+  --glass-bg: rgba(255, 255, 255, 0.08);
   --glass-border: rgba(255, 255, 255, 0.12);
 }
 
@@ -16,17 +16,32 @@
 
 html,
 body {
-  height: 100%;
+  min-height: 100%;
+  height: auto;
 }
 
 body {
   margin: 0;
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto,
     Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
-  background: var(--base);
+  background:
+    radial-gradient(1200px circle at 50% 35%, rgba(255, 77, 109, 0.08), transparent 50%),
+    radial-gradient(900px circle at 50% 70%, rgba(90, 15, 28, 0.08), transparent 55%),
+    radial-gradient(
+      1200px circle at 50% 55%,
+      rgba(11, 11, 15, 0) 30%,
+      rgba(11, 11, 15, 0.85) 78%,
+      rgba(11, 11, 15, 1) 100%
+    );
   color: var(--text);
   overflow-x: hidden;
   animation: page-in 220ms ease-out both;
+}
+
+/* Keep the same visual treatment but avoid continuous repaint-heavy background animation. */
+.aurora::before,
+.aurora::after {
+  animation: none;
 }
 
 @keyframes page-in {
@@ -54,6 +69,7 @@ body {
   z-index: 10;
   background: rgba(11, 11, 15, 0.65);
   backdrop-filter: blur(16px) saturate(135%);
+  transform: translateZ(0);
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
@@ -163,6 +179,44 @@ body.session--complete .topbar {
 
 .screen-complete:not([hidden]) {
   display: block;
+  position: relative;
+  z-index: 20;
+  pointer-events: auto;
+}
+
+.complete-home-btn {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  z-index: 30;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  pointer-events: auto;
+  justify-content: center;
+  white-space: nowrap;
+}
+
+.complete-home-circle {
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(193, 18, 31, 0.18);
+  border: 1px solid rgba(255, 77, 109, 0.35);
+  box-shadow: 0 0 0 4px rgba(255, 77, 109, 0.06);
+  color: rgba(255, 77, 109, 0.95);
+}
+
+.complete-home-icon {
+  width: 16px;
+  height: 16px;
+}
+
+.complete-home-text {
+  font-weight: 900;
 }
 
 .content-card {
@@ -306,14 +360,17 @@ body.session--complete .topbar {
 }
 
 .complete-card {
+  position: relative;
+  z-index: 1;
+  pointer-events: auto;
   max-width: 860px;
   margin: 0 auto;
-  padding: 28px 18px 22px;
-  border-radius: 24px;
+  padding: 28px 24px 24px;
+  border-radius: 20px;
   background: var(--glass-bg);
   border: 1px solid var(--glass-border);
   backdrop-filter: blur(18px);
-  box-shadow: 0 28px 120px rgba(0, 0, 0, 0.45);
+  box-shadow: none;
   text-align: center;
 }
 
@@ -390,7 +447,7 @@ body.session--complete .topbar {
 }
 
 .complete-actions {
-  margin-top: 22px;
+  margin-top: 20px;
   display: flex;
   gap: 12px;
   justify-content: center;
@@ -420,6 +477,26 @@ body.session--complete .topbar {
   color: rgba(184, 184, 184, 0.98);
   line-height: 1.7;
   font-size: 14.5px;
+  text-align: center;
+}
+
+.complete-upgrade-text p {
+  margin: 0;
+}
+
+.complete-upgrade-text ul {
+  margin: 10px auto 0;
+  padding: 0;
+  list-style-position: inside;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  text-align: center;
+}
+
+.complete-upgrade-text li {
+  margin: 0;
 }
 
 .complete-upgrade-actions {
@@ -429,7 +506,97 @@ body.session--complete .topbar {
   gap: 12px;
   flex-wrap: wrap;
 }
+.divider {
+  margin: 14px 0;
+  border: none;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
 
+.knowledge-pack-section {
+  margin-top: 10px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.knowledge-pack-title {
+  margin: 18px 0 8px;
+  font-size: 20px;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.knowledge-pack-description {
+  margin: 0;
+  font-size: 15px;
+  color: rgba(208, 208, 208, 0.95);
+  line-height: 1.5;
+  margin-bottom: 14px;
+}
+
+.knowledge-pack-btn {
+  margin-top: 12px;
+  display: inline-flex;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100vw;
+  height: 100vh;
+  min-height: 100dvh;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(6px);
+  z-index: 9999;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  margin: 0;
+  pointer-events: auto;
+  overflow: hidden;
+}
+
+.modal-overlay[aria-hidden="true"] {
+  display: none;
+}
+
+.modal-card {
+  width: min(520px, 100%);
+  border-radius: 20px;
+  padding: 20px;
+  background: rgba(16, 16, 22, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  box-shadow: 0 22px 80px rgba(0, 0, 0, 0.45);
+  text-align: center;
+}
+
+.modal-card h2 {
+  margin: 0;
+  font-size: 22px;
+  letter-spacing: -0.02em;
+}
+
+.modal-card p {
+  margin: 12px 0 0;
+  color: rgba(208, 208, 208, 0.95);
+  line-height: 1.55;
+}
+
+.modal-actions {
+  margin-top: 18px;
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
 .btn {
   appearance: none;
   border: 1px solid rgba(255, 77, 109, 0.35);
@@ -475,6 +642,23 @@ body.session--complete .topbar {
 }
 
 @media (max-width: 520px) {
+  .complete-home-btn {
+    top: 16px;
+    left: 16px;
+    padding: 10px 14px;
+    gap: 8px;
+    min-height: 40px;
+  }
+
+  .complete-home-circle {
+    width: 30px;
+    height: 30px;
+  }
+
+  .complete-home-text {
+    font-size: 13px;
+  }
+
   .topbar-inner {
     padding: 12px 14px;
   }
