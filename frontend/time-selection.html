@@ -162,6 +162,10 @@
       </div>
     </div>
 
+    <script type="module">
+      import { ensureAuthenticated } from './auth.js'
+      await ensureAuthenticated('auth.html')
+    </script>
     <script src="./time-selection.js"></script>
   </body>
 </html>

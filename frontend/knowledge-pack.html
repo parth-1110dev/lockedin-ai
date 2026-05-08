@@ -151,6 +151,10 @@
       </div>
     </main>
 
+    <script type="module">
+      import { ensureAuthenticated } from './auth.js'
+      await ensureAuthenticated('auth.html')
+    </script>
     <script src="./knowledge-pack.js"></script>
   </body>
 </html>

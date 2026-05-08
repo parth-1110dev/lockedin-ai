@@ -25,18 +25,49 @@
         </div>
 
         <div class="nav-actions">
-          <a class="btn btn-outline" href="#" aria-label="Login">
+          <a class="btn btn-outline" href="auth.html" aria-label="Login">
             Login
           </a>
           <a class="btn btn-outline" href="pricing.html" aria-label="Upgrade">
             Upgrade
           </a>
-          <a class="btn btn-primary" href="#" aria-label="Sign up">
+          <a class="btn btn-primary" href="auth.html" aria-label="Sign up">
             Sign Up
           </a>
+          <button
+            id="profileBtn"
+            class="btn btn-outline nav-profile-btn"
+            type="button"
+            aria-label="User profile"
+            title="Profile"
+            hidden
+          >
+            <span class="nav-profile-circle" aria-hidden="true">
+              <span id="profileInitial" class="nav-profile-initial">U</span>
+            </span>
+          </button>
         </div>
       </div>
     </header>
+
+    <div id="accountOverlay" class="account-overlay" aria-hidden="true"></div>
+    <aside id="accountSidebar" class="account-sidebar" aria-hidden="true">
+      <div class="account-sidebar-inner">
+        <div class="account-sidebar-top">
+          <div class="account-avatar" id="sidebarAvatar" aria-hidden="true">U</div>
+          <div class="account-meta">
+            <div id="sidebarEmail" class="account-email">user@example.com</div>
+            <div id="sidebarPlan" class="account-plan">Free</div>
+          </div>
+        </div>
+
+        <div class="account-divider"></div>
+
+        <button id="sidebarLogoutBtn" class="btn btn-outline account-logout" type="button">
+          Logout
+        </button>
+      </div>
+    </aside>
 
     <main class="hero">
       <div class="hero-inner">
@@ -301,6 +332,146 @@
       </div>
     </section>
 
+    <script type="module" src="./auth.js"></script>
+    <script type="module">
+      import { getSession, fetchAndStoreUserPlan, signOut, subscribeToAuthStateChange } from './auth.js'
+
+      const loginBtn = document.querySelector('a[aria-label="Login"]')
+      const signupBtn = document.querySelector('a[aria-label="Sign up"]')
+      const profileBtn = document.getElementById('profileBtn')
+      const profileInitial = document.getElementById('profileInitial')
+      const accountOverlay = document.getElementById('accountOverlay')
+      const accountSidebar = document.getElementById('accountSidebar')
+      const sidebarAvatar = document.getElementById('sidebarAvatar')
+      const sidebarEmail = document.getElementById('sidebarEmail')
+      const sidebarPlan = document.getElementById('sidebarPlan')
+      const sidebarLogoutBtn = document.getElementById('sidebarLogoutBtn')
+
+      let isSidebarOpen = false
+
+      function getPlanLabel(plan) {
+        const normalized = String(plan || 'free').trim().toLowerCase()
+        if (normalized === 'pro') return 'Pro'
+        if (normalized === 'elite') return 'Elite'
+        return 'Free'
+      }
+
+      function setSidebarOpen(nextOpen) {
+        isSidebarOpen = Boolean(nextOpen)
+        if (accountSidebar) {
+          accountSidebar.classList.toggle('is-open', isSidebarOpen)
+          accountSidebar.setAttribute('aria-hidden', isSidebarOpen ? 'false' : 'true')
+        }
+        if (accountOverlay) {
+          accountOverlay.classList.toggle('is-open', isSidebarOpen)
+          accountOverlay.setAttribute('aria-hidden', isSidebarOpen ? 'false' : 'true')
+        }
+      }
+
+      function clearProfileUI() {
+        if (profileInitial) profileInitial.textContent = ''
+        if (sidebarAvatar) sidebarAvatar.textContent = ''
+        if (sidebarEmail) {
+          sidebarEmail.textContent = ''
+          sidebarEmail.removeAttribute('title')
+        }
+        if (sidebarPlan) sidebarPlan.textContent = ''
+      }
+
+      function populateProfile(session) {
+        const email = session?.user?.email || ''
+        if (!email) {
+          clearProfileUI()
+          return
+        }
+
+        const initial = email.trim().charAt(0).toUpperCase()
+        const plan = window.currentUserPlan || window.localStorage.getItem('userPlan') || 'free'
+
+        if (profileInitial) profileInitial.textContent = initial
+        if (sidebarAvatar) sidebarAvatar.textContent = initial
+        if (sidebarEmail) {
+          sidebarEmail.textContent = email
+          sidebarEmail.title = email
+        }
+        if (sidebarPlan) sidebarPlan.textContent = getPlanLabel(plan)
+      }
+
+      async function syncNavAuthState() {
+        const session = await getSession()
+        const loggedIn = Boolean(session && session.user)
+
+        if (loginBtn) loginBtn.hidden = loggedIn
+        if (signupBtn) signupBtn.hidden = loggedIn
+        if (profileBtn) profileBtn.hidden = !loggedIn
+
+        if (loggedIn && session) {
+          populateProfile(session)
+          const userId = session.user?.id
+          if (userId) {
+            await fetchAndStoreUserPlan(userId)
+            populateProfile(session)
+          }
+        } else {
+          clearProfileUI()
+          setSidebarOpen(false)
+        }
+      }
+
+      if (profileBtn) {
+        profileBtn.addEventListener('click', () => {
+          setSidebarOpen(!isSidebarOpen)
+        })
+      }
+
+      if (accountOverlay) {
+        accountOverlay.addEventListener('click', () => setSidebarOpen(false))
+      }
+
+      if (sidebarLogoutBtn) {
+        sidebarLogoutBtn.addEventListener('click', async () => {
+          clearProfileUI()
+          if (profileBtn) profileBtn.hidden = true
+          if (loginBtn) loginBtn.hidden = false
+          if (signupBtn) signupBtn.hidden = false
+          setSidebarOpen(false)
+          await signOut()
+        })
+      }
+
+      window.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') setSidebarOpen(false)
+      })
+
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', syncNavAuthState)
+      } else {
+        syncNavAuthState()
+      }
+
+      const authSubscription = subscribeToAuthStateChange((session) => {
+        const loggedIn = Boolean(session && session.user)
+
+        if (loginBtn) loginBtn.hidden = loggedIn
+        if (signupBtn) signupBtn.hidden = loggedIn
+        if (profileBtn) profileBtn.hidden = !loggedIn
+
+        if (loggedIn) {
+          populateProfile(session)
+          const userId = session.user?.id
+          if (userId) {
+            fetchAndStoreUserPlan(userId).then(() => populateProfile(session))
+          }
+        } else {
+          clearProfileUI()
+          setSidebarOpen(false)
+        }
+      })
+
+      window.addEventListener('beforeunload', () => {
+        if (authSubscription?.unsubscribe) authSubscription.unsubscribe()
+      })
+    </script>
     <script src="./script.js"></script>
   </body>
 </html>

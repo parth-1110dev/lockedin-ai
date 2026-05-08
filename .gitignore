@@ -1,7 +1,30 @@
-backend/.env
+# Ignore environment files, API keys, Python cache, OS files, logs, and notes
+# Environment files
 .env
+backend/.env
+
+# API keys / secrets
 OPEN AI API KEY.txt
+
+# Python cache
 __pycache__/
 *.pyc
 
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs (optional)
+*.log
+
+# Notes / temp files
 REPO PUSH.txt
+PHASE 3 POSTS.txt
+
+Snapshots/
+
+INDIE HACKERS MARKETING.txt
+RECOMMENDED PRICING.txt
+REDDIT MARKETING.txt
+SAAS MARKETING.txt
+SOCIAL MEDIA POSTS.txt

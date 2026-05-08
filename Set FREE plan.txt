@@ -4,3 +4,4 @@ Set PRO plan:
 localStorage.setItem("userPlan", "pro");
 Set ELITE plan:
 localStorage.setItem("userPlan", "elite");
+

@@ -321,8 +321,7 @@ function copyNotesToClipboard() {
 function initNavigation() {
   if (backBtn) {
     backBtn.addEventListener("click", () => {
-      const isFileContext = window.location.protocol === "file:";
-      const target = isFileContext ? "session.html?view=feedback" : "/session.html?view=feedback";
+      const target = "session.html?view=feedback";
       window.location.href = target;
     });
   }

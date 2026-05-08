@@ -1,5 +1,6 @@
 const STORAGE_TOPIC_KEY = "lockedin_selected_topic";
 const STORAGE_PLAN_KEY = "userPlan";
+const STORAGE_MINUTES_KEY = "lockedin_selected_minutes";
 const STORAGE_CLIENT_RATE_KEY = "lockedin_generate_rate_window";
 const STORAGE_EXPLANATION_MODE_KEY = "lockedin_explanation_mode";
 const STORAGE_EXPLANATION_TOPIC_KEY = "lockedin_explanation_mode_topic";
@@ -286,6 +287,16 @@ function initNavigation() {
 
   if (generateNotesBtn) {
     generateNotesBtn.addEventListener("click", handleGenerateNotes);
+    // Apply plan-based visibility immediately
+    try {
+      const plan = getUserPlan();
+      if (plan === 'free') {
+        // keep button but the handler will open modal; optionally mark it
+        generateNotesBtn.classList.add('is-locked');
+      } else {
+        generateNotesBtn.classList.remove('is-locked');
+      }
+    } catch (_e) {}
   }
 }
 
@@ -648,13 +659,17 @@ async function fetchAiSessionContent(topic, minutes, plan, explanationMode) {
 function initFromStorage() {
   const plan = getUserPlan();
   const selectedTopic = window.localStorage.getItem(STORAGE_TOPIC_KEY) || "";
+  const savedMinutesRaw = window.localStorage.getItem(STORAGE_MINUTES_KEY) || "";
+  const savedMinutes = Number.parseInt(savedMinutesRaw, 10);
   const explanationTopic = (window.localStorage.getItem(STORAGE_EXPLANATION_TOPIC_KEY) || "").trim();
   const savedExplanationMode = (window.localStorage.getItem(STORAGE_EXPLANATION_MODE_KEY) || "").trim();
   const explanationMode = explanationTopic && explanationTopic === selectedTopic.trim()
     ? savedExplanationMode
     : "";
   const planMaxMinutes = getPlanMaxMinutes(plan);
-  const requestedMinutes = getPlanSessionMinutes(plan);
+  const requestedMinutes = Number.isFinite(savedMinutes)
+    ? savedMinutes
+    : getPlanSessionMinutes(plan);
 
   // FREE plan: block attempts > 30 minutes (even if a previous plan stored a higher value).
   if (plan === "free" && requestedMinutes > planMaxMinutes) {

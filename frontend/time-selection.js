@@ -277,6 +277,8 @@ if (upgradeButtonEl) {
 
 if (changeTopicBtn) {
   changeTopicBtn.addEventListener("click", () => {
+    window.localStorage.removeItem(STORAGE_EXPLANATION_MODE_KEY);
+    window.localStorage.removeItem(STORAGE_EXPLANATION_TOPIC_KEY);
     window.location.href = "index.html";
   });
 }

@@ -153,6 +153,151 @@ body {
   align-items: center;
 }
 
+.nav-profile-btn {
+  gap: 10px;
+  padding: 8px;
+  min-width: 0;
+}
+
+.nav-profile-circle {
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(193, 18, 31, 0.18);
+  border: 1px solid rgba(255, 77, 109, 0.35);
+  box-shadow: 0 0 0 4px rgba(255, 77, 109, 0.06);
+  color: rgba(255, 77, 109, 0.95);
+  flex: 0 0 auto;
+}
+
+.nav-profile-initial {
+  font-size: 14px;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+}
+
+.nav-profile-btn:hover .nav-profile-circle {
+  box-shadow:
+    0 0 0 4px rgba(255, 77, 109, 0.08),
+    0 0 24px rgba(255, 77, 109, 0.12);
+}
+
+.account-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  background: rgba(5, 5, 8, 0.42);
+  backdrop-filter: blur(4px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 180ms ease;
+}
+
+.account-overlay.is-open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.account-sidebar {
+  position: fixed;
+  top: 0;
+  right: 0;
+  z-index: 50;
+  width: min(340px, calc(100vw - 32px));
+  height: 100vh;
+  padding: 20px;
+  transform: translateX(100%);
+  transition: transform 220ms ease;
+  pointer-events: none;
+}
+
+.account-sidebar.is-open {
+  transform: translateX(0);
+  pointer-events: auto;
+}
+
+.account-sidebar-inner {
+  height: 100%;
+  border-radius: 24px;
+  background: linear-gradient(180deg, rgba(19, 19, 25, 0.98), rgba(11, 11, 15, 0.98));
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: -24px 0 80px rgba(0, 0, 0, 0.45);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.account-sidebar-top {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.account-avatar {
+  width: 52px;
+  height: 52px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(193, 18, 31, 0.18);
+  border: 1px solid rgba(255, 77, 109, 0.35);
+  color: rgba(255, 77, 109, 0.98);
+  font-weight: 900;
+  font-size: 18px;
+  letter-spacing: -0.02em;
+  box-shadow: 0 0 0 4px rgba(255, 77, 109, 0.06);
+  flex: 0 0 auto;
+}
+
+.account-meta {
+  min-width: 0;
+  flex: 1;
+}
+
+.account-email {
+  font-size: 15px;
+  font-weight: 800;
+  line-height: 1.4;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.account-plan {
+  margin-top: 4px;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.account-divider {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.account-logout {
+  width: 100%;
+  justify-content: center;
+  margin-top: auto;
+}
+
+@media (max-width: 520px) {
+  .account-sidebar {
+    width: min(100vw, 340px);
+    padding: 12px;
+  }
+
+  .account-sidebar-inner {
+    border-radius: 20px;
+    padding: 20px;
+  }
+}
+
 .btn {
   text-decoration: none;
   display: inline-flex;

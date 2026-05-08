@@ -119,6 +119,10 @@
       </section>
     </main>
 
+    <script type="module">
+      import { ensureAuthenticated } from './auth.js'
+      await ensureAuthenticated('auth.html')
+    </script>
     <script src="./session.js"></script>
   </body>
 </html>
