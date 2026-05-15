@@ -13,6 +13,7 @@ const quickButtons = document.querySelectorAll(".quick-btn");
 const explainButtons = document.querySelectorAll(".explain-btn");
 const startSessionBtn = document.getElementById("startSessionBtn");
 const changeTopicBtn = document.getElementById("changeTopicBtn");
+const timeBackBtn = document.getElementById("timeBackBtn");
 const explainUpgradeModal = document.getElementById("explainUpgradeModal");
 const explainUpgradeNowBtn = document.getElementById("explainUpgradeNowBtn");
 const explainUpgradeCloseBtn = document.getElementById("explainUpgradeCloseBtn");
@@ -27,11 +28,11 @@ function normalizePlan(plan) {
 
 function getCurrentPlan() {
   const planState = window.LockedInPlanState;
-  if (planState && typeof planState.getPlan === "function") {
-    return normalizePlan(planState.getPlan());
+  if (planState && typeof planState.getCurrentActivePlan === "function") {
+    return normalizePlan(planState.getCurrentActivePlan());
   }
 
-  return normalizePlan(window.currentUserPlan || "free");
+  return "free";
 }
 
 function getPlanMinutes(planValue) {
@@ -45,12 +46,11 @@ function clamp(value, lower, upper) {
   return Math.max(lower, Math.min(upper, value));
 }
 
-let currentPlan = getCurrentPlan();
-let maxMinutes = getPlanMinutes(currentPlan);
+let maxMinutes = getPlanMinutes(getCurrentPlan());
 let selectedExplanationMode = null;
 
 function syncPlanDependentState() {
-  currentPlan = getCurrentPlan();
+  const currentPlan = getCurrentPlan();
   maxMinutes = getPlanMinutes(currentPlan);
   minutes = clamp(minutes, minMinutes, maxMinutes);
 
@@ -75,10 +75,11 @@ function isPremiumButton(btn) {
 }
 
 function isFreeLockedButton(btn) {
-  return currentPlan === "free" && isPremiumButton(btn);
+  return getCurrentPlan() === "free" && isPremiumButton(btn);
 }
 
 function updatePremiumButtonStates() {
+  const currentPlan = getCurrentPlan();
   explainButtons.forEach((btn) => {
     if (isPremiumButton(btn)) {
       const lockIcon = btn.querySelector(".lock-icon");
@@ -312,6 +313,12 @@ if (changeTopicBtn) {
   changeTopicBtn.addEventListener("click", () => {
     window.localStorage.removeItem(STORAGE_EXPLANATION_MODE_KEY);
     window.localStorage.removeItem(STORAGE_EXPLANATION_TOPIC_KEY);
+    window.location.href = "index.html";
+  });
+}
+
+if (timeBackBtn) {
+  timeBackBtn.addEventListener("click", () => {
     window.location.href = "index.html";
   });
 }

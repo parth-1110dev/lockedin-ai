@@ -21,23 +21,6 @@ let generatedNotes = "";
 let isGenerating = false;
 let isDownloading = false;
 
-let currentPlan = getCurrentPlan();
-
-function syncPlanDependentState() {
-  currentPlan = getCurrentPlan();
-
-  // If the page hasn't generated content yet and plan just upgraded,
-  // attempt a fresh generation so premium users see unlocked features immediately.
-  if (!isGenerating && (!generatedNotes || String(generatedNotes).trim() === "")) {
-    // best-effort: do not await here to avoid blocking event handlers
-    try {
-      generateKnowledgePack();
-    } catch (_e) {
-      // ignore
-    }
-  }
-}
-
 function normalizePlan(plan) {
   const normalized = String(plan || "").trim().toLowerCase();
   if (normalized === "pro" || normalized === "elite" || normalized === "free") return normalized;
@@ -46,11 +29,11 @@ function normalizePlan(plan) {
 
 function getCurrentPlan() {
   const planState = window.LockedInPlanState;
-  if (planState && typeof planState.getPlan === "function") {
-    return normalizePlan(planState.getPlan());
+  if (planState && typeof planState.getCurrentActivePlan === "function") {
+    return normalizePlan(planState.getCurrentActivePlan());
   }
 
-  return normalizePlan(window.currentUserPlan || "free");
+  return "free";
 }
 
 function getUserPlan() {
@@ -379,10 +362,5 @@ if (copyNotesBtn) {
 initNavigation();
 
 window.addEventListener("DOMContentLoaded", () => {
-  syncPlanDependentState();
   generateKnowledgePack();
-});
-
-window.addEventListener('userPlanUpdated', () => {
-  syncPlanDependentState();
 });

@@ -28,6 +28,7 @@
       <div class="container">
         <h1 class="title">How long do you want to focus?</h1>
         <p class="subtext">Commit to your session. Stay locked in.</p>
+        <button id="timeBackBtn" class="back-btn" type="button">← Back</button>
 
         <section class="panel" aria-label="Timer selector">
           <div class="time-selector">
@@ -102,17 +103,6 @@
             </div>
           </section>
 
-          <div
-            id="upgradeContainer"
-            class="time-limit-message"
-            style="display: none"
-            aria-hidden="true"
-          >
-            <div id="upgradeText" class="time-limit-text"></div>
-            <button id="upgradeButton" class="btn btn-outline" type="button">
-              Upgrade
-            </button>
-          </div>
         </section>
 
         <div class="cta-row" role="group" aria-label="Session actions">
@@ -144,6 +134,18 @@
 
           <button id="startSessionBtn" class="btn btn-primary" type="button">
             Start Session
+          </button>
+        </div>
+
+        <div
+          id="upgradeContainer"
+          class="time-limit-message"
+          style="display: none"
+          aria-hidden="true"
+        >
+          <div id="upgradeText" class="time-limit-text"></div>
+          <button id="upgradeButton" class="btn btn-outline" type="button">
+            Upgrade
           </button>
         </div>
       </div>

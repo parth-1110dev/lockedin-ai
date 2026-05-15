@@ -312,7 +312,6 @@
           if (window.LockedInPlanState && typeof window.LockedInPlanState.setPlan === 'function') {
             window.LockedInPlanState.setPlan(normalizedPlan, { source: 'auth_html', userId })
           } else {
-            window.currentUserPlan = normalizedPlan
             window.dispatchEvent(new CustomEvent('userPlanUpdated', { detail: { plan: normalizedPlan, source: 'auth_html', userId } }))
           }
         } catch (_) {}

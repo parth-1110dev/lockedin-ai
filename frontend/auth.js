@@ -6,15 +6,10 @@ function getPlanState() {
 
 function getCurrentPlan() {
   const planState = getPlanState()
-  if (planState && typeof planState.getPlan === 'function') {
-    return planState.getPlan()
+  if (planState && typeof planState.getCurrentActivePlan === 'function') {
+    return planState.getCurrentActivePlan()
   }
 
-  const plan = window.currentUserPlan || 'free'
-  const normalized = String(plan).trim().toLowerCase()
-  if (normalized === 'pro' || normalized === 'elite' || normalized === 'free') {
-    return normalized
-  }
   return 'free'
 }
 

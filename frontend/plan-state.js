@@ -3,7 +3,7 @@
   const CHANNEL_NAME = "lockedin-plan-state";
   const STORAGE_EVENT_KEY = "lockedin_plan_state_event";
 
-  let activePlan = normalizePlan(window.currentUserPlan || "free");
+  let activePlan = "free";
   let activeUserId = "";
   let broadcastChannel = null;
 
@@ -69,8 +69,8 @@
     return activePlan;
   }
 
-  function getPlan() {
-    return normalizePlan(activePlan || window.currentUserPlan || "free");
+  function getCurrentActivePlan() {
+    return normalizePlan(activePlan);
   }
 
   function getUserId() {
@@ -126,8 +126,8 @@
 
   window.LockedInPlanState = {
     normalizePlan,
+    getCurrentActivePlan,
     setPlan,
-    getPlan,
     getUserId,
   };
 

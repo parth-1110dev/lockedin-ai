@@ -59,11 +59,11 @@ function normalizePlan(plan) {
 
 function getPlan() {
   const planState = getPlanState();
-  if (planState && typeof planState.getPlan === "function") {
-    return normalizePlan(planState.getPlan());
+  if (planState && typeof planState.getCurrentActivePlan === "function") {
+    return normalizePlan(planState.getCurrentActivePlan());
   }
 
-  return normalizePlan(window.currentUserPlan || "free");
+  return "free";
 }
 
 function setPlan(plan) {
@@ -77,7 +77,6 @@ function setActivePricingPlan(plan) {
   if (planState && typeof planState.setPlan === "function") {
     planState.setPlan(normalizedPlan, { source: "pricing", broadcast: true });
   } else {
-    window.currentUserPlan = normalizedPlan;
     window.dispatchEvent(new CustomEvent("userPlanUpdated", { detail: { plan: normalizedPlan, source: "pricing" } }));
   }
 

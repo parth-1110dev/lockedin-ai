@@ -17,7 +17,7 @@ const FREE_DAILY_SESSION_LIMIT = 5;
 const SESSION_RENDER_BATCH_SIZE = 8;
 
 function getUserPlan() {
-  return currentPlan;
+  return getCurrentPlan();
 }
 
 const timerDisplayEl = document.getElementById("timerDisplay");
@@ -51,14 +51,13 @@ function normalizePlan(plan) {
 
 function getCurrentPlan() {
   const planState = window.LockedInPlanState;
-  if (planState && typeof planState.getPlan === "function") {
-    return normalizePlan(planState.getPlan());
+  if (planState && typeof planState.getCurrentActivePlan === "function") {
+    return normalizePlan(planState.getCurrentActivePlan());
   }
 
-  return normalizePlan(window.currentUserPlan || "free");
+  return "free";
 }
 
-let currentPlan = getCurrentPlan();
 let sessionIsActive = false;
 
 function clamp(value, lower, upper) {
@@ -362,7 +361,7 @@ function handleGenerateNotes() {
 }
 
 function syncPlanDependentState() {
-  currentPlan = getCurrentPlan();
+  const currentPlan = getCurrentPlan();
 
   if (generateNotesBtn) {
     if (currentPlan === "free") {
