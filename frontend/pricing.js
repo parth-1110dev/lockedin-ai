@@ -685,6 +685,18 @@ async function startCheckout(plan) {
               // ONLY update local state after backend confirms database update
               await applyUpdatedUserPlan(verification.refreshedPlan || normalizedPlan);
 
+              try {
+                // Authoritative refresh: fetch the latest plan directly from backend/Supabase
+                // This ensures all pages read fresh plan state instead of relying on any cached values.
+                const userId = await getCurrentUserId();
+                if (userId) {
+                  const authModule = await import('./auth.js');
+                  await authModule.fetchAndStoreUserPlan(userId);
+                }
+              } catch (_refreshErr) {
+                // Non-fatal: plan state likely already updated, continue.
+              }
+
               console.log("[PAYMENT HANDLER] SUCCESS: Showing success message to user");
               window.alert("Plan upgraded successfully! Enjoy your premium features.");
 
@@ -749,6 +761,13 @@ function wirePlanButtons() {
           }
 
           await applyUpdatedUserPlan(normalized);
+
+          try {
+            const authModule = await import('./auth.js');
+            if (userId) await authModule.fetchAndStoreUserPlan(userId);
+          } catch (_e) {
+            // ignore
+          }
           await savePreviouslyOwnedPlan(userId, normalized);
           await clearTemporarySessionState();
           window.location.href = 'index.html';
