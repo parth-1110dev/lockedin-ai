@@ -49,6 +49,7 @@
     const previousPlan = activePlan;
 
     activePlan = normalized;
+    window.localStorage.setItem("lockedin_active_plan", normalized);
     if (typeof nextOptions.userId !== "undefined") {
       activeUserId = String(nextOptions.userId || "").trim();
     }
@@ -70,6 +71,13 @@
   }
 
   function getCurrentActivePlan() {
+    const storedPlan =
+      window.localStorage.getItem("lockedin_active_plan");
+
+    if (storedPlan) {
+      activePlan = normalizePlan(storedPlan);
+    }
+
     return normalizePlan(activePlan);
   }
 

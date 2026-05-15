@@ -28,11 +28,20 @@ function normalizePlan(plan) {
 
 function getCurrentPlan() {
   const planState = window.LockedInPlanState;
-  if (planState && typeof planState.getCurrentActivePlan === "function") {
+
+  // Primary synchronized state source
+  if (
+    planState &&
+    typeof planState.getCurrentActivePlan === "function"
+  ) {
     return normalizePlan(planState.getCurrentActivePlan());
   }
 
-  return "free";
+  // Safe fallback for standalone pages / initial load
+  const storedPlan =
+    window.localStorage.getItem("lockedin_active_plan") || "free";
+
+  return normalizePlan(storedPlan);
 }
 
 function getPlanMinutes(planValue) {
@@ -80,6 +89,7 @@ function isFreeLockedButton(btn) {
 
 function updatePremiumButtonStates() {
   const currentPlan = getCurrentPlan();
+  console.log("CURRENT PLAN IN PREMIUM STATE:", currentPlan);
   explainButtons.forEach((btn) => {
     if (isPremiumButton(btn)) {
       const lockIcon = btn.querySelector(".lock-icon");
@@ -173,7 +183,7 @@ function setupExplanationOptions() {
 }
 
 function updateUpgradeUI() {
-  const tier = currentPlan;
+  const tier = getCurrentPlan();
 
   const upgradeContainer = document.getElementById("upgradeContainer");
   const upgradeText = document.getElementById("upgradeText");

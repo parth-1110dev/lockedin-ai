@@ -225,7 +225,6 @@ async function generateKnowledgePack() {
   if (isGenerating) return;
   isGenerating = true;
   generatedNotes = "";
-  showLoadingState();
 
   try {
     const topic = window.localStorage.getItem(STORAGE_TOPIC_KEY) || "Unknown Topic";
@@ -251,6 +250,7 @@ async function generateKnowledgePack() {
       showContentState();
       return;
     }
+    showLoadingState();
 
     generatedNotes = data.notes || "";
     showContentState();
