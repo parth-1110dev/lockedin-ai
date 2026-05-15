@@ -1,6 +1,7 @@
 Fix Backend:
 uvicorn main:app --host 192.168.1.16 --port 8000 --reload
 uvicorn main:app --reload
+uvicorn backend.main:app --reload --port 8000
 
 python -m http.server 8000
 http://localhost:8000

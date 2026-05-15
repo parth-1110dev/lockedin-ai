@@ -1,5 +1,4 @@
 const STORAGE_TOPIC_KEY = "lockedin_selected_topic";
-const STORAGE_PLAN_KEY = "userPlan";
 const STORAGE_SESSION_CONTENT_KEY = "lockedin_session_content";
 
 const _host = window.location.hostname;
@@ -22,11 +21,23 @@ let generatedNotes = "";
 let isGenerating = false;
 let isDownloading = false;
 
-function getUserPlan() {
-  const plan = window.localStorage.getItem(STORAGE_PLAN_KEY) || "free";
-  const normalized = String(plan).trim().toLowerCase();
+function normalizePlan(plan) {
+  const normalized = String(plan || "").trim().toLowerCase();
   if (normalized === "pro" || normalized === "elite" || normalized === "free") return normalized;
   return "free";
+}
+
+function getCurrentPlan() {
+  const planState = window.LockedInPlanState;
+  if (planState && typeof planState.getPlan === "function") {
+    return normalizePlan(planState.getPlan());
+  }
+
+  return normalizePlan(window.currentUserPlan || "free");
+}
+
+function getUserPlan() {
+  return getCurrentPlan();
 }
 
 function selectFormat(format) {

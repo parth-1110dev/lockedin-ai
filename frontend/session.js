@@ -1,5 +1,4 @@
 const STORAGE_TOPIC_KEY = "lockedin_selected_topic";
-const STORAGE_PLAN_KEY = "userPlan";
 const STORAGE_MINUTES_KEY = "lockedin_selected_minutes";
 const STORAGE_CLIENT_RATE_KEY = "lockedin_generate_rate_window";
 const STORAGE_EXPLANATION_MODE_KEY = "lockedin_explanation_mode";
@@ -16,10 +15,7 @@ const minMinutes = 5;
 const FREE_DAILY_SESSION_LIMIT = 5;
 
 function getUserPlan() {
-  const plan = window.localStorage.getItem(STORAGE_PLAN_KEY) || "free";
-  const normalized = String(plan).trim().toLowerCase();
-  if (normalized === "pro" || normalized === "elite" || normalized === "free") return normalized;
-  return "free";
+  return currentPlan;
 }
 
 const motivationMessages = ["You're doing great", "Stay locked in", "Keep going"];
@@ -47,6 +43,24 @@ let motivationIntervalId = null;
 let remainingSeconds = 0;
 let completedSeconds = 0;
 let rating = 0;
+
+function normalizePlan(plan) {
+  const normalized = String(plan || "").trim().toLowerCase();
+  if (normalized === "pro" || normalized === "elite" || normalized === "free") return normalized;
+  return "free";
+}
+
+function getCurrentPlan() {
+  const planState = window.LockedInPlanState;
+  if (planState && typeof planState.getPlan === "function") {
+    return normalizePlan(planState.getPlan());
+  }
+
+  return normalizePlan(window.currentUserPlan || "free");
+}
+
+let currentPlan = getCurrentPlan();
+let sessionIsActive = false;
 
 function clamp(value, lower, upper) {
   return Math.max(lower, Math.min(upper, value));
@@ -126,8 +140,12 @@ function showCompleteScreen() {
 }
 
 function applyPlanAndGo(nextPlan) {
-  window.localStorage.setItem(STORAGE_PLAN_KEY, nextPlan);
-  window.location.href = "time-selection.html";
+  // Do NOT set fake plan in localStorage - only real payment updates unlock Pro/Elite
+  // Clear temporary session state to prevent accidental reuse
+  window.localStorage.removeItem(STORAGE_TOPIC_KEY);
+  window.localStorage.removeItem(STORAGE_MINUTES_KEY);
+  // Redirect cleanly to pricing page for actual upgrade
+  window.location.href = "pricing.html";
 }
 
 function renderCompletionUpgradeConversion() {
@@ -267,9 +285,7 @@ function initNavigation() {
 
   if (homeBtn) {
     homeBtn.addEventListener("click", () => {
-      const isFileContext = window.location.protocol === "file:";
-      const target = isFileContext ? "./index.html" : "/";
-      window.open(target, "_self");
+      window.location.href = "index.html";
     });
   }
 
@@ -287,16 +303,6 @@ function initNavigation() {
 
   if (generateNotesBtn) {
     generateNotesBtn.addEventListener("click", handleGenerateNotes);
-    // Apply plan-based visibility immediately
-    try {
-      const plan = getUserPlan();
-      if (plan === 'free') {
-        // keep button but the handler will open modal; optionally mark it
-        generateNotesBtn.classList.add('is-locked');
-      } else {
-        generateNotesBtn.classList.remove('is-locked');
-      }
-    } catch (_e) {}
   }
 }
 
@@ -369,6 +375,22 @@ function handleGenerateNotes() {
 
   // Pro or Elite: navigate to knowledge pack page
   window.location.href = "knowledge-pack.html";
+}
+
+function syncPlanDependentState() {
+  currentPlan = getCurrentPlan();
+
+  if (generateNotesBtn) {
+    if (currentPlan === "free") {
+      generateNotesBtn.classList.add("is-locked");
+    } else {
+      generateNotesBtn.classList.remove("is-locked");
+    }
+  }
+
+  if (completeScreen && !completeScreen.hidden) {
+    renderCompletionUpgradeConversion();
+  }
 }
 
 function clearSessionContent() {
@@ -723,6 +745,20 @@ const sessionAllowed = forceFeedbackView ? false : initFromStorage();
 initStars();
 initNavigation();
 setupKnowledgePackModal();
+syncPlanDependentState();
+
+window.addEventListener("userPlanUpdated", () => {
+  syncPlanDependentState();
+
+  if (!forceFeedbackView && !sessionIsActive) {
+    const allowed = initFromStorage();
+    if (allowed) {
+      sessionIsActive = true;
+      startMotivation();
+      startTimer();
+    }
+  }
+});
 
 if (forceFeedbackView) {
   initFeedbackView();
@@ -731,6 +767,7 @@ if (forceFeedbackView) {
 window.addEventListener("beforeunload", clearTimerIntervals);
 
 if (sessionAllowed) {
+  sessionIsActive = true;
   startMotivation();
   startTimer();
 }

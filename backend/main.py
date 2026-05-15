@@ -2,8 +2,6 @@ import json
 import os
 import time
 import traceback
-from urllib import error as urllib_error
-from urllib import request as urllib_request
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, Request
@@ -11,6 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from openai import OpenAI
 from razorpay_config import get_razorpay_client as _get_razorpay_client
+from supabase import create_client
 
 load_dotenv()
 
@@ -154,12 +153,26 @@ SUPABASE_URL = (os.getenv("SUPABASE_URL") or "").strip()
 SUPABASE_SERVICE_ROLE_KEY = (os.getenv("SUPABASE_SERVICE_ROLE_KEY") or "").strip()
 SUPABASE_USERS_TABLE = "users"
 
+# Initialize Supabase client using official SDK
+_supabase_client = None
+if SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY:
+    _supabase_client = create_client(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
+    print(f"Supabase SDK client initialized with URL: {SUPABASE_URL}")
+else:
+    print("WARNING: Supabase credentials not configured - SDK client will not be initialized")
+
 
 # Simple in-memory rate limit: max requests per IP per rolling 60s window.
 RATE_LIMIT_WINDOW_SEC = 60.0
 RATE_LIMIT_MAX_PER_WINDOW = 10
 # ip -> (window_start_epoch, count_in_window)
 _rate_limit_buckets: dict[str, tuple[float, int]] = {}
+
+# In-memory idempotency cache for verify-payment calls.
+# Prevents duplicate plan upgrades if the same verification is retried.
+# Key: (user_id, payment_id), Value: (result_timestamp, response)
+_verify_payment_idempotency_cache: dict[tuple[str, str], tuple[float, dict]] = {}
+VERIFY_PAYMENT_CACHE_TTL_SEC = 3600.0  # 1 hour
 
 
 def _get_plan_config(plan: str) -> dict[str, object]:
@@ -173,42 +186,362 @@ def _normalize_paid_plan(plan: object) -> str:
     return ""
 
 
-def _update_user_plan_in_supabase(user_id: str, selected_plan: str) -> tuple[bool, str | None]:
-    if not SUPABASE_URL or not SUPABASE_SERVICE_ROLE_KEY:
-        return False, "Supabase service role credentials are not configured."
+def _normalize_user_email(email: object) -> str:
+    return str(email or "").strip().lower()
 
-    endpoint = f"{SUPABASE_URL.rstrip('/')}/rest/v1/{SUPABASE_USERS_TABLE}?id=eq.{user_id}"
-    body = json.dumps({"plan": selected_plan}).encode("utf-8")
-    headers = {
-        "apikey": SUPABASE_SERVICE_ROLE_KEY,
-        "Authorization": f"Bearer {SUPABASE_SERVICE_ROLE_KEY}",
-        "Content-Type": "application/json",
-        "Prefer": "return=representation",
-    }
-    request = urllib_request.Request(endpoint, data=body, headers=headers, method="PATCH")
+
+def _extract_single_row(response: object) -> dict | None:
+    rows = getattr(response, "data", None)
+    if not isinstance(rows, list) or len(rows) != 1:
+        return None
+    row = rows[0]
+    return row if isinstance(row, dict) else None
+
+
+@app.post("/sync-user")
+async def sync_user(data: dict):
+    """
+    Ensure public.users uses the Supabase auth user ID as its primary key.
+
+    If the auth user row already exists, keep it in sync.
+    If a legacy row exists under the same email but a different ID, migrate it
+    to the auth user ID so future plan updates target the correct row.
+    """
+    if not _supabase_client:
+        message = "Supabase SDK client is not initialized. Credentials missing."
+        print(f"[Supabase][User Sync] CRITICAL ERROR: {message}")
+        return JSONResponse(status_code=500, content={"error": message, "step": "supabase_config"})
+
+    user_id = str(data.get("user_id", "")).strip()
+    email = _normalize_user_email(data.get("email", ""))
+    source = str(data.get("source", "unknown")).strip() or "unknown"
+
+    print("[Supabase][User Sync] START")
+    print(f"[Supabase][User Sync] source={source} auth_user_id={user_id} email={email or 'n/a'}")
+
+    if not user_id:
+        message = "Missing auth user ID."
+        print(f"[Supabase][User Sync] VALIDATION ERROR: {message}")
+        return JSONResponse(status_code=400, content={"error": message, "step": "user_validation"})
 
     try:
-        with urllib_request.urlopen(request, timeout=10) as response:
-            response_payload = response.read().decode("utf-8", errors="ignore")
-            if not response_payload:
-                return False, "Supabase returned an empty response."
+        existing_by_id = _extract_single_row(
+            _supabase_client.table(SUPABASE_USERS_TABLE)
+            .select("id,email,plan")
+            .eq("id", user_id)
+            .execute()
+        )
 
-            parsed = json.loads(response_payload)
-            if not parsed or not isinstance(parsed, list):
-                return False, "Supabase returned an invalid response."
+        if existing_by_id:
+            existing_email = _normalize_user_email(existing_by_id.get("email", ""))
+            existing_plan = str(existing_by_id.get("plan", "free")).strip().lower() or "free"
+            print(
+                f"[Supabase][User Sync] MATCHED auth_user_id={user_id} users_table_id={existing_by_id.get('id', '')} plan={existing_plan}"
+            )
 
-            updated_row = parsed[0] if parsed else {}
-            updated_plan = str(updated_row.get("plan", "")).strip().lower()
-            if not updated_plan:
-                return False, "Updated plan was not returned by Supabase."
+            if email and existing_email != email:
+                update_response = (
+                    _supabase_client.table(SUPABASE_USERS_TABLE)
+                    .update({"email": email})
+                    .eq("id", user_id)
+                    .execute()
+                )
+                print(f"[Supabase][User Sync] Email refreshed for auth_user_id={user_id} response={update_response}")
 
-            return True, updated_plan
-    except urllib_error.HTTPError as error:
-        details = error.read().decode("utf-8", errors="ignore")
-        message = details or str(error)
-        return False, message
+            confirm_row = _extract_single_row(
+                _supabase_client.table(SUPABASE_USERS_TABLE)
+                .select("id,email,plan")
+                .eq("id", user_id)
+                .execute()
+            )
+            if not confirm_row:
+                message = "Users row disappeared after matching by auth ID."
+                print(f"[Supabase][User Sync] CONFIRM ERROR: {message}")
+                return JSONResponse(status_code=500, content={"error": message, "step": "confirm"})
+
+            confirm_id = str(confirm_row.get("id", "")).strip()
+            confirm_email = _normalize_user_email(confirm_row.get("email", ""))
+            print(
+                f"[Supabase][User Sync] SUCCESS auth_user_id={user_id} users_table_id={confirm_id} email={confirm_email or 'n/a'} match=True"
+            )
+            return {
+                "success": True,
+                "matched": True,
+                "action": "existing_match",
+                "user_id": user_id,
+                "users_table_id": confirm_id,
+                "email": confirm_email,
+                "plan": str(confirm_row.get("plan", "free")).strip().lower() or "free",
+            }
+
+        legacy_row = None
+        if email:
+            legacy_row = _extract_single_row(
+                _supabase_client.table(SUPABASE_USERS_TABLE)
+                .select("id,email,plan")
+                .eq("email", email)
+                .execute()
+            )
+
+        if legacy_row and str(legacy_row.get("id", "")).strip() != user_id:
+            legacy_id = str(legacy_row.get("id", "")).strip()
+            legacy_plan = str(legacy_row.get("plan", "free")).strip().lower() or "free"
+            print(
+                f"[Supabase][User Sync] REPAIR legacy_row_id={legacy_id} -> auth_user_id={user_id} email={email or 'n/a'} plan={legacy_plan}"
+            )
+            repair_response = (
+                _supabase_client.table(SUPABASE_USERS_TABLE)
+                .update({"id": user_id, "email": email or legacy_row.get("email", ""), "plan": legacy_plan})
+                .eq("id", legacy_id)
+                .execute()
+            )
+            print(f"[Supabase][User Sync] Repair response={repair_response}")
+        else:
+            print(f"[Supabase][User Sync] INSERT auth_user_id={user_id} email={email or 'n/a'}")
+            insert_response = (
+                _supabase_client.table(SUPABASE_USERS_TABLE)
+                .insert({"id": user_id, "email": email, "plan": "free"})
+                .execute()
+            )
+            print(f"[Supabase][User Sync] Insert response={insert_response}")
+
+        confirm_row = _extract_single_row(
+            _supabase_client.table(SUPABASE_USERS_TABLE)
+            .select("id,email,plan")
+            .eq("id", user_id)
+            .execute()
+        )
+        if not confirm_row:
+            message = "Users row not found after sync attempt."
+            print(f"[Supabase][User Sync] CONFIRM ERROR: {message}")
+            return JSONResponse(status_code=500, content={"error": message, "step": "confirm"})
+
+        confirm_id = str(confirm_row.get("id", "")).strip()
+        confirm_email = _normalize_user_email(confirm_row.get("email", ""))
+        confirm_plan = str(confirm_row.get("plan", "free")).strip().lower() or "free"
+
+        if confirm_id != user_id:
+            message = f"Synced row ID mismatch: expected={user_id}, got={confirm_id}"
+            print(f"[Supabase][User Sync] MISMATCH ERROR: {message}")
+            return JSONResponse(status_code=500, content={"error": message, "step": "confirm"})
+
+        print(
+            f"[Supabase][User Sync] SUCCESS auth_user_id={user_id} users_table_id={confirm_id} email={confirm_email or 'n/a'} match=True"
+        )
+        return {
+            "success": True,
+            "matched": True,
+            "action": "repaired_or_inserted",
+            "user_id": user_id,
+            "users_table_id": confirm_id,
+            "email": confirm_email,
+            "plan": confirm_plan,
+        }
     except Exception as error:
-        return False, str(error)
+        traceback.print_exc()
+        message = str(error)
+        print(f"[Supabase][User Sync] EXCEPTION: {message}")
+        return JSONResponse(status_code=500, content={"error": message, "step": "unexpected_error"})
+
+
+def _update_user_plan_in_supabase(user_id: str, selected_plan: str) -> tuple[bool, str | None]:
+    """
+    Update user's plan using official Supabase Python SDK.
+    
+    Flow:
+    1. Validate inputs and SDK client availability
+    2. Normalize plan to valid value
+    3. Execute update via SDK with retries
+    4. Verify returned data exists and matches expected plan
+    5. Confirm update with explicit read query
+    
+    Returns:
+        (success: bool, result_or_error: str | None)
+        - (True, updated_plan) if successful
+        - (False, error_message) if failed after all retries
+    """
+    if not _supabase_client:
+        message = "Supabase SDK client is not initialized. Credentials missing."
+        print(f"[Supabase] CRITICAL ERROR: {message}")
+        return False, message
+
+    if not user_id:
+        message = "Invalid or missing user_id."
+        print(f"[Supabase] Validation ERROR: {message}")
+        return False, message
+
+    normalized_plan = _normalize_paid_plan(selected_plan)
+    if not normalized_plan:
+        message = "Invalid plan specified."
+        print(f"[Supabase] Validation ERROR: {message}")
+        return False, message
+
+    preflight_row = _extract_single_row(
+        _supabase_client.table(SUPABASE_USERS_TABLE)
+        .select("id,email,plan")
+        .eq("id", user_id)
+        .execute()
+    )
+    if not preflight_row:
+        message = f"No users row found for auth user ID {user_id}."
+        print(f"[Supabase] Preflight ERROR: {message}")
+        return False, message
+
+    preflight_id = str(preflight_row.get("id", "")).strip()
+    preflight_email = _normalize_user_email(preflight_row.get("email", ""))
+    preflight_plan = str(preflight_row.get("plan", "free")).strip().lower() or "free"
+    print(
+        f"[Supabase] Preflight MATCH auth_user_id={user_id} users_table_id={preflight_id} email={preflight_email or 'n/a'} current_plan={preflight_plan}"
+    )
+    if preflight_id != user_id:
+        message = f"Preflight users row ID mismatch: expected={user_id}, got={preflight_id}"
+        print(f"[Supabase] Preflight ERROR: {message}")
+        return False, message
+
+    max_retries = 2
+    for attempt in range(0, max_retries + 1):
+        try:
+            print(f"[Supabase] Update attempt={attempt} user_id={user_id} plan={normalized_plan}")
+            
+            # STEP 1: Execute UPDATE via SDK
+            update_started = time.monotonic()
+            
+            print("=== PLAN UPDATE START ===")
+            print("USER ID:", user_id)
+            print("PLAN:", normalized_plan)
+
+            update_response = (
+                _supabase_client.table(SUPABASE_USERS_TABLE)
+                .update({"plan": normalized_plan})
+                .eq("id", user_id)
+                .execute()
+            )
+
+            print("UPDATE RESPONSE:", update_response)
+            print("UPDATE DATA:", update_response.data)
+            
+            update_elapsed_ms = round((time.monotonic() - update_started) * 1000, 2)
+            print(
+                f"[Supabase] Update response attempt={attempt} elapsed_ms={update_elapsed_ms} "
+                f"status_code={getattr(update_response, 'status_code', 'N/A')}"
+            )
+            
+            # STEP 2: Verify returned data exists
+            if not hasattr(update_response, 'data') or update_response.data is None:
+                message = "Supabase update returned no data."
+                print(f"[Supabase] Data validation ERROR attempt={attempt}: {message}")
+                if attempt < max_retries:
+                    time.sleep(1 + attempt)
+                    continue
+                return False, message
+            
+            updated_rows = update_response.data
+            if not isinstance(updated_rows, list) or len(updated_rows) != 1:
+                message = f"Supabase expected 1 updated row, got {len(updated_rows) if isinstance(updated_rows, list) else 'non-list'}."
+                print(f"[Supabase] Row count ERROR attempt={attempt}: {message}")
+                if attempt < max_retries:
+                    time.sleep(1 + attempt)
+                    continue
+                return False, message
+            
+            updated_row = updated_rows[0]
+            updated_user_id = str(updated_row.get("id", "")).strip()
+            updated_plan = str(updated_row.get("plan", "")).strip().lower()
+            
+            # STEP 3: Verify user_id matches
+            if updated_user_id != user_id:
+                message = f"Returned user_id mismatch: expected={user_id}, got={updated_user_id}"
+                print(f"[Supabase] User ID validation ERROR attempt={attempt}: {message}")
+                if attempt < max_retries:
+                    time.sleep(1 + attempt)
+                    continue
+                return False, message
+            
+            # STEP 4: Verify plan matches
+            if not updated_plan:
+                message = "Updated plan field was empty or missing."
+                print(f"[Supabase] Plan field ERROR attempt={attempt}: {message}")
+                if attempt < max_retries:
+                    time.sleep(1 + attempt)
+                    continue
+                return False, message
+            
+            if updated_plan != normalized_plan:
+                message = f"Returned plan mismatch: expected={normalized_plan}, got={updated_plan}"
+                print(f"[Supabase] Plan value ERROR attempt={attempt}: {message}")
+                if attempt < max_retries:
+                    time.sleep(1 + attempt)
+                    continue
+                return False, message
+            
+            # STEP 5: Confirm update with explicit read query
+            print(f"[Supabase] Confirming update attempt={attempt} user_id={user_id}")
+            confirm_started = time.monotonic()
+            
+            confirm_response = (
+                _supabase_client.table(SUPABASE_USERS_TABLE)
+                .select("id,plan")
+                .eq("id", user_id)
+                .execute()
+            )
+
+            print("CONFIRM RESPONSE:", confirm_response)
+            print("CONFIRM DATA:", confirm_response.data)
+            
+            confirm_elapsed_ms = round((time.monotonic() - confirm_started) * 1000, 2)
+            print(
+                f"[Supabase] Confirm response attempt={attempt} elapsed_ms={confirm_elapsed_ms}"
+            )
+            
+            # Verify confirmation response
+            if not hasattr(confirm_response, 'data') or confirm_response.data is None:
+                message = "Supabase confirmation query returned no data."
+                print(f"[Supabase] Confirm data validation ERROR attempt={attempt}: {message}")
+                if attempt < max_retries:
+                    time.sleep(1 + attempt)
+                    continue
+                return False, message
+            
+            confirm_rows = confirm_response.data
+            if not isinstance(confirm_rows, list) or len(confirm_rows) != 1:
+                message = f"Confirmation expected 1 row, got {len(confirm_rows) if isinstance(confirm_rows, list) else 'non-list'}."
+                print(f"[Supabase] Confirm row count ERROR attempt={attempt}: {message}")
+                if attempt < max_retries:
+                    time.sleep(1 + attempt)
+                    continue
+                return False, message
+            
+            confirm_row = confirm_rows[0]
+            confirm_user_id = str(confirm_row.get("id", "")).strip()
+            confirm_plan = str(confirm_row.get("plan", "")).strip().lower()
+            
+            # Final verification
+            if confirm_user_id != user_id or confirm_plan != normalized_plan:
+                message = (
+                    f"Confirmation mismatch: user_id={confirm_user_id} (expected={user_id}), "
+                    f"plan={confirm_plan} (expected={normalized_plan})"
+                )
+                print(f"[Supabase] Confirm mismatch ERROR attempt={attempt}: {message}")
+                if attempt < max_retries:
+                    time.sleep(1 + attempt)
+                    continue
+                return False, message
+            
+            # SUCCESS
+            print(
+                f"[Supabase] SUCCESS ✓ attempt={attempt} user_id={user_id} plan={updated_plan} "
+                f"update_elapsed_ms={update_elapsed_ms} confirm_elapsed_ms={confirm_elapsed_ms}"
+            )
+            return True, updated_plan
+            
+        except Exception as error:
+            traceback.print_exc()
+            message = str(error)
+            print(f"[Supabase] Exception attempt={attempt}: {message}")
+            if attempt < max_retries:
+                time.sleep(1 + attempt)
+                continue
+            return False, message
 
 
 def _get_client_ip(request: Request) -> str:
@@ -225,6 +558,37 @@ def _prune_stale_rate_buckets(now: float) -> None:
     stale = [ip for ip, (window_start, _) in _rate_limit_buckets.items() if window_start < cutoff]
     for ip in stale:
         del _rate_limit_buckets[ip]
+
+
+def _prune_stale_idempotency_cache(now: float) -> None:
+    """Remove expired idempotency cache entries."""
+    cutoff = now - VERIFY_PAYMENT_CACHE_TTL_SEC
+    stale = [key for key, (ts, _) in _verify_payment_idempotency_cache.items() if ts < cutoff]
+    for key in stale:
+        del _verify_payment_idempotency_cache[key]
+
+
+def _get_idempotency_cache_key(user_id: str, payment_id: str) -> tuple[str, str]:
+    """Generate idempotency cache key from user_id and payment_id."""
+    return (user_id.strip(), payment_id.strip())
+
+
+def _check_idempotency_cache(user_id: str, payment_id: str, now: float) -> dict | None:
+    """Check if this payment verification was already processed. Returns cached response or None."""
+    _prune_stale_idempotency_cache(now)
+    key = _get_idempotency_cache_key(user_id, payment_id)
+    if key in _verify_payment_idempotency_cache:
+        ts, response = _verify_payment_idempotency_cache[key]
+        print(f"IDEMPOTENCY CACHE HIT: key={key} cached_at={ts}")
+        return response
+    return None
+
+
+def _set_idempotency_cache(user_id: str, payment_id: str, response: dict, now: float) -> None:
+    """Cache the verification response for duplicate request prevention."""
+    key = _get_idempotency_cache_key(user_id, payment_id)
+    _verify_payment_idempotency_cache[key] = (now, response)
+    print(f"IDEMPOTENCY CACHE SET: key={key} cached_response={response}")
 
 
 def _rate_limit_allow(ip: str, now: float) -> bool:
@@ -310,12 +674,32 @@ async def create_order(data: dict):
 
 @app.post("/verify-payment")
 async def verify_payment(data: dict):
+    """
+    ATOMIC PAYMENT VERIFICATION FLOW:
+    1. Check for duplicate/idempotent requests (prevent repeated upgrades)
+    2. Validate and normalize inputs
+    3. Verify Razorpay payment signature securely
+    4. Validate authenticated user exists and plan is valid
+    5. Update Supabase users table with confirmed DB success
+    6. Return final success response only after full DB confirmation
+
+    This endpoint is the SINGLE SOURCE OF TRUTH for payment finalization.
+    Frontend must NEVER assume success before receiving confirmation from this endpoint.
+    """
+    verification_start = time.time()
+    
     try:
+        # STEP 0: INPUT NORMALIZATION & BASIC VALIDATION
+        print("=" * 80)
+        print("VERIFY PAYMENT: Starting payment verification flow")
+        print("=" * 80)
+        
         plan = _normalize_paid_plan(data.get("selected_plan", data.get("plan", "")))
         if not plan:
+            print("VERIFY PAYMENT [STEP 0]: Plan validation FAILED - invalid plan")
             return JSONResponse(
                 status_code=400,
-                content={"error": "Only paid plans (pro, elite) can be verified."},
+                content={"error": "Only paid plans (pro, elite) can be verified.", "step": "plan_validation"},
             )
 
         order_id = str(data.get("razorpay_order_id", "")).strip()
@@ -323,21 +707,59 @@ async def verify_payment(data: dict):
         signature = str(data.get("razorpay_signature", "")).strip()
         user_id = str(data.get("user_id", "")).strip()
 
-        if not order_id or not payment_id or not signature:
-            return JSONResponse(
-                status_code=400,
-                content={"error": "Missing Razorpay payment details."},
-            )
+        print(f"VERIFY PAYMENT [STEP 0]: Inputs normalized - user_id={user_id}, plan={plan}, payment_id={payment_id}")
 
+        # STEP 0.5: CHECK IDEMPOTENCY (PREVENT DUPLICATE UPGRADES)
+        now = time.time()
+        cached_response = _check_idempotency_cache(user_id, payment_id, now)
+        if cached_response is not None:
+            print(f"VERIFY PAYMENT [IDEMPOTENCY]: Duplicate request detected, returning cached response")
+            return cached_response
+
+        # STEP 1: VALIDATE AUTHENTICATED USER
+        if not user_id:
+            print("VERIFY PAYMENT [STEP 1]: User validation FAILED - missing user_id (unauthenticated)")
+            error_response = {
+                "error": "User not authenticated or session expired.",
+                "step": "user_validation",
+                "authenticated": False,
+            }
+            return JSONResponse(status_code=401, content=error_response)
+        print(f"VERIFY PAYMENT [STEP 1]: User validation PASSED - user_id={user_id}")
+
+        # STEP 2: VALIDATE RAZORPAY PAYMENT DETAILS
+        if not order_id or not payment_id or not signature:
+            print("VERIFY PAYMENT [STEP 2]: Razorpay details validation FAILED - missing payment details")
+            error_response = {
+                "error": "Missing Razorpay payment details.",
+                "step": "payment_details_validation",
+            }
+            return JSONResponse(status_code=400, content=error_response)
+        print(f"VERIFY PAYMENT [STEP 2]: Razorpay details validation PASSED")
+
+        # STEP 3: VALIDATE SELECTED PLAN
+        if plan not in PLAN_PRICING_PAISE:
+            print(f"VERIFY PAYMENT [STEP 3]: Plan validation FAILED - plan={plan} not in pricing config")
+            error_response = {
+                "error": "Selected plan is not available.",
+                "step": "plan_validation",
+            }
+            return JSONResponse(status_code=400, content=error_response)
+        print(f"VERIFY PAYMENT [STEP 3]: Plan validation PASSED - plan={plan}")
+
+        # STEP 4: VERIFY RAZORPAY SIGNATURE (SECURE CRYPTOGRAPHIC VERIFICATION)
         client_data = _get_razorpay_client()
-        razorpay_client, _ = client_data
+        razorpay_client, razorpay_key_id = client_data
         if razorpay_client is None:
-            return JSONResponse(
-                status_code=500,
-                content={"error": "Razorpay keys are not configured on server."},
-            )
+            print("VERIFY PAYMENT [STEP 4]: Razorpay client initialization FAILED - missing keys")
+            error_response = {
+                "error": "Razorpay is not configured on server.",
+                "step": "razorpay_config",
+            }
+            return JSONResponse(status_code=500, content=error_response)
 
         try:
+            print(f"VERIFY PAYMENT [STEP 4]: Verifying Razorpay signature - order={order_id}, payment={payment_id}")
             razorpay_client.utility.verify_payment_signature(
                 {
                     "razorpay_order_id": order_id,
@@ -345,33 +767,71 @@ async def verify_payment(data: dict):
                     "razorpay_signature": signature,
                 }
             )
+            print("VERIFY PAYMENT [STEP 4]: Razorpay signature verification PASSED ✓")
         except Exception as error:
-            print("RAZORPAY SIGNATURE VERIFY ERROR:", str(error))
-            return JSONResponse(
-                status_code=400,
-                content={"error": "Payment signature verification failed."},
-            )
+            traceback.print_exc()
+            print(f"VERIFY PAYMENT [STEP 4]: Razorpay signature verification FAILED - {str(error)}")
+            error_response = {
+                "error": "Payment signature verification failed. Payment was not processed.",
+                "step": "razorpay_signature",
+                "details": str(error),
+            }
+            return JSONResponse(status_code=400, content=error_response)
 
+        # STEP 5: UPDATE SUPABASE WITH RETRIES AND CONFIRMATION
+        print(f"VERIFY PAYMENT [STEP 5]: Attempting Supabase plan update - user_id={user_id}, plan={plan}")
         updated, update_result = _update_user_plan_in_supabase(user_id, plan)
+        
         if not updated:
-            return JSONResponse(
-                status_code=502,
-                content={"error": "Payment verified, but plan update failed.", "details": update_result},
-            )
+            print(f"VERIFY PAYMENT [STEP 5]: Supabase plan update FAILED (all {2+1} attempts exhausted) - {update_result}")
+            error_response = {
+                "error": "Payment processed but database update failed. Your payment is secure.",
+                "step": "database_update",
+                "details": update_result,
+                "razorpay_payment_id": payment_id,
+                "razorpay_order_id": order_id,
+            }
+            return JSONResponse(status_code=502, content=error_response)
 
-        return {
+        print(f"VERIFY PAYMENT [STEP 5]: Supabase plan update PASSED ✓ - updated_plan={update_result}")
+
+        # STEP 6: BUILD FINAL SUCCESS RESPONSE
+        print("VERIFY PAYMENT [STEP 6]: All verification steps PASSED ✓ - Building final response")
+        verification_elapsed_ms = round((time.time() - verification_start) * 1000, 2)
+        
+        success_response = {
             "verified": True,
+            "success": True,
             "updated_plan": update_result,
             "user_id": user_id,
-            "razorpay_order_id": order_id,
             "razorpay_payment_id": payment_id,
+            "razorpay_order_id": order_id,
+            "step": "complete",
+            "elapsed_ms": verification_elapsed_ms,
         }
+
+        # Cache this successful verification for idempotency
+        _set_idempotency_cache(user_id, payment_id, success_response, now)
+        
+        print("=" * 80)
+        print(f"VERIFY PAYMENT: SUCCESS ✓ - user_id={user_id}, plan={update_result}, elapsed_ms={verification_elapsed_ms}")
+        print("=" * 80)
+        
+        return success_response
+
     except Exception as error:
         traceback.print_exc()
-        print("VERIFY PAYMENT ERROR:", str(error))
+        verification_elapsed_ms = round((time.time() - verification_start) * 1000, 2)
+        print(f"VERIFY PAYMENT [UNEXPECTED ERROR]: {str(error)} (elapsed_ms={verification_elapsed_ms})")
+        print("=" * 80)
         return JSONResponse(
             status_code=500,
-            content={"error": "Failed to verify Razorpay payment", "details": str(error)},
+            content={
+                "error": "An unexpected error occurred during payment verification.",
+                "step": "unexpected_error",
+                "details": str(error),
+                "elapsed_ms": verification_elapsed_ms,
+            },
         )
 
 

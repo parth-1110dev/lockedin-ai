@@ -19,6 +19,21 @@ const explainUpgradeCloseBtn = document.getElementById("explainUpgradeCloseBtn")
 
 let minutes = 30;
 
+function normalizePlan(plan) {
+  const normalized = String(plan || "").trim().toLowerCase();
+  if (normalized === "pro" || normalized === "elite" || normalized === "free") return normalized;
+  return "free";
+}
+
+function getCurrentPlan() {
+  const planState = window.LockedInPlanState;
+  if (planState && typeof planState.getPlan === "function") {
+    return normalizePlan(planState.getPlan());
+  }
+
+  return normalizePlan(window.currentUserPlan || "free");
+}
+
 function getPlanMinutes(planValue) {
   const normalized = String(planValue || "free").trim().toLowerCase();
   if (normalized === "pro") return 45;
@@ -30,27 +45,44 @@ function clamp(value, lower, upper) {
   return Math.max(lower, Math.min(upper, value));
 }
 
-const planRaw = window.localStorage.getItem("userPlan") || "free";
-const plan = String(planRaw).trim().toLowerCase();
-const normalizedPlan =
-  plan === "pro" || plan === "elite" || plan === "free" ? plan : "free";
-
-let maxMinutes = getPlanMinutes(normalizedPlan);
+let currentPlan = getCurrentPlan();
+let maxMinutes = getPlanMinutes(currentPlan);
 let selectedExplanationMode = null;
+
+function syncPlanDependentState() {
+  currentPlan = getCurrentPlan();
+  maxMinutes = getPlanMinutes(currentPlan);
+  minutes = clamp(minutes, minMinutes, maxMinutes);
+
+  if (timeValueEl) {
+    timeValueEl.textContent = String(minutes);
+  }
+
+  if (minusBtn) {
+    minusBtn.disabled = minutes <= minMinutes;
+  }
+
+  if (plusBtn) {
+    plusBtn.disabled = minutes >= maxMinutes;
+  }
+
+  updatePremiumButtonStates();
+  updateUpgradeUI();
+}
 
 function isPremiumButton(btn) {
   return btn.getAttribute("data-premium") === "true";
 }
 
 function isFreeLockedButton(btn) {
-  return normalizedPlan === "free" && isPremiumButton(btn);
+  return currentPlan === "free" && isPremiumButton(btn);
 }
 
 function updatePremiumButtonStates() {
   explainButtons.forEach((btn) => {
     if (isPremiumButton(btn)) {
       const lockIcon = btn.querySelector(".lock-icon");
-      const isFreeTier = normalizedPlan === "free";
+      const isFreeTier = currentPlan === "free";
 
       if (isFreeTier) {
         // Free users: show lock icon, disable interaction
@@ -140,10 +172,7 @@ function setupExplanationOptions() {
 }
 
 function updateUpgradeUI() {
-  const planValue = window.localStorage.getItem("userPlan") || "free";
-  const p = String(planValue).trim().toLowerCase();
-  const tier =
-    p === "pro" || p === "elite" || p === "free" ? p : "free";
+  const tier = currentPlan;
 
   const upgradeContainer = document.getElementById("upgradeContainer");
   const upgradeText = document.getElementById("upgradeText");
@@ -236,10 +265,14 @@ minutes = maxMinutes;
 setMinutes(minutes);
 
 window.addEventListener("DOMContentLoaded", () => {
-  updateUpgradeUI();
+  syncPlanDependentState();
 });
 
-updateUpgradeUI();
+window.addEventListener("userPlanUpdated", () => {
+  syncPlanDependentState();
+});
+
+syncPlanDependentState();
 setupExplanationOptions();
 
 if (explainUpgradeNowBtn) {
