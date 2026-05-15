@@ -476,6 +476,8 @@ function openCheckout(options) {
     throw new Error("Razorpay checkout is not available.");
   }
 
+  console.log("WINDOW RAZORPAY:", window.Razorpay);
+  console.log("RAZORPAY OPTIONS:", options);
   const instance = new window.Razorpay(options);
   instance.open();
   return instance;
@@ -604,6 +606,30 @@ async function startCheckout(plan) {
   const button = getButton(normalizedPlan);
   isProcessingCheckout = true;
   setButtonBusy(button, true);
+
+  // SAFETY: prevent guests from initiating paid checkouts. Require authenticated user.
+  try {
+    const currentUserId = await getCurrentUserId();
+    if (!currentUserId) {
+      // Reset UI and show friendly prompt before redirecting to auth.
+      resetCheckoutUi(button);
+      window.alert(
+        "Please create an account to securely save your subscription. You will be redirected to sign up."
+      );
+      const returnTo = encodeURIComponent(window.location.pathname + window.location.search);
+      window.location.href = `auth.html?returnTo=${returnTo}`;
+      return;
+    }
+  } catch (_e) {
+    // On unexpected errors determining auth, be conservative and block checkout.
+    resetCheckoutUi(button);
+    window.alert(
+      "Please sign in to purchase a plan. You will be redirected to the login page."
+    );
+    const returnTo = encodeURIComponent(window.location.pathname + window.location.search);
+    window.location.href = `auth.html?returnTo=${returnTo}`;
+    return;
+  }
 
   try {
     console.log("[CHECKOUT] Starting checkout for plan:", normalizedPlan);
