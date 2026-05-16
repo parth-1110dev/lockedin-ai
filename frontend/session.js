@@ -143,7 +143,7 @@ function positionHomeButton() {
     // Compute title top relative to the complete screen
     const offsetTop = titleRect.top - screenRect.top;
     const btnHeight = btn.offsetHeight || 40;
-    const top = Math.max(12, Math.round(offsetTop + titleRect.height / 2 - btnHeight / 2));
+    const top = Math.max(10, Math.round(offsetTop + titleRect.height / 2 - btnHeight / 2 - 4));
 
     btn.style.top = top + "px";
   } catch (e) {
