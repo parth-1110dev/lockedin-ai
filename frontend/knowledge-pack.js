@@ -253,6 +253,10 @@ async function generateKnowledgePack() {
     showLoadingState();
 
     generatedNotes = data.notes || "";
+    window.localStorage.setItem(
+      "lockedin_generated_notes",
+      generatedNotes
+    );
     showContentState();
   } catch (error) {
     console.error("Error generating notes:", error);
@@ -265,6 +269,11 @@ async function generateKnowledgePack() {
 
 function downloadNotes() {
   if (!downloadNotesBtn || isDownloading) return;
+
+  if (!generatedNotes) {
+    generatedNotes =
+      window.localStorage.getItem("lockedin_generated_notes") || "";
+  }
 
   const content = normalizeContentOrNull();
   if (!content) {
@@ -286,6 +295,7 @@ function downloadNotes() {
         ? `${baseName}-exam-mode-notes.pdf`
         : `${baseName}-notes.pdf`;
       doc.save(fileName);
+      window.localStorage.removeItem("lockedin_generated_notes");
       return;
     }
 
@@ -296,15 +306,18 @@ function downloadNotes() {
         return;
       }
       downloadBlob(notionContent, "text/markdown;charset=utf-8", `${baseName}-notion-ready.md`);
+      window.localStorage.removeItem("lockedin_generated_notes");
       return;
     }
 
     if (effectiveFormat === "markdown") {
       downloadBlob(content, "text/markdown;charset=utf-8", `${baseName}-notes.md`);
+      window.localStorage.removeItem("lockedin_generated_notes");
       return;
     }
 
     downloadBlob(content, "text/plain;charset=utf-8", `${baseName}-notes.txt`);
+    window.localStorage.removeItem("lockedin_generated_notes");
   } catch (_err) {
     alert("Download failed. Please try again.");
   } finally {
