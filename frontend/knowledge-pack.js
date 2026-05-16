@@ -3,9 +3,11 @@ const STORAGE_SESSION_CONTENT_KEY = "lockedin_session_content";
 
 const _host = window.location.hostname;
 const API_BASE =
-  !_host || _host === "localhost" || _host === "127.0.0.1"
+  !window.location.hostname ||
+  window.location.hostname === "localhost" ||
+  window.location.hostname === "127.0.0.1"
     ? "http://127.0.0.1:8000"
-    : `http://${_host}:8000`;
+    : "https://lockedin-ai.onrender.com";
 
 const formatButtons = document.querySelectorAll(".format-btn");
 const examModeToggle = document.getElementById("examModeToggle");
