@@ -118,6 +118,48 @@ function resetSessionViewState() {
   if (continueBtn) continueBtn.disabled = false;
 }
 
+// Position the Home button to align vertically with the "Session Complete" title.
+// This computes the title's vertical center within the complete screen and places
+// the button's center on the same row. The button is positioned absolutely so
+// it scrolls with the page content.
+let _homeBtnResizeTimer = null;
+function positionHomeButton() {
+  try {
+    const btn = document.getElementById("homeBtn");
+    const complete = document.getElementById("completeScreen");
+    if (!btn || !complete) return;
+
+    const completeCard = complete.querySelector(".complete-card");
+    const title = completeCard ? completeCard.querySelector(".complete-title") : null;
+    if (!completeCard || !title) return;
+
+    // Ensure absolute positioning context
+    btn.style.position = "absolute";
+    btn.style.left = "20px";
+
+    const screenRect = complete.getBoundingClientRect();
+    const titleRect = title.getBoundingClientRect();
+
+    // Compute title top relative to the complete screen
+    const offsetTop = titleRect.top - screenRect.top;
+    const btnHeight = btn.offsetHeight || 40;
+    const top = Math.max(12, Math.round(offsetTop + titleRect.height / 2 - btnHeight / 2));
+
+    btn.style.top = top + "px";
+  } catch (e) {
+    // fail silently — positioning is non-critical
+    console.error("[UI] positionHomeButton error", e);
+  }
+}
+
+// Keep button aligned on resize with debouncing
+window.addEventListener("resize", () => {
+  if (_homeBtnResizeTimer) clearTimeout(_homeBtnResizeTimer);
+  _homeBtnResizeTimer = setTimeout(() => {
+    positionHomeButton();
+  }, 120);
+});
+
 function showCompleteScreen() {
   if (remainingSeconds > 0) {
     completedSeconds = remainingSeconds;
@@ -133,6 +175,12 @@ function showCompleteScreen() {
   resetSessionViewState();
 
   renderCompletionUpgradeConversion();
+  // After rendering completes, compute and set the Home button position so it
+  // aligns with the Session Complete title row. Use rAF to ensure DOM measurements
+  // reflect the final layout.
+  window.requestAnimationFrame(() => {
+    positionHomeButton();
+  });
 }
 
 function applyPlanAndGo(nextPlan) {

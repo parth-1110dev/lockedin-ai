@@ -26,6 +26,14 @@ function normalizePlan(plan) {
   return "free";
 }
 
+function getPersistedPlanFallback() {
+  try {
+    return normalizePlan(window.localStorage.getItem("lockedin_active_plan"));
+  } catch (_error) {
+    return "free";
+  }
+}
+
 function getCurrentPlan() {
   const planState = window.LockedInPlanState;
   if (planState && typeof planState.getCurrentActivePlan === "function") {
@@ -36,7 +44,7 @@ function getCurrentPlan() {
     return normalizePlan(planState.getPlan());
   }
 
-  return "free";
+  return getPersistedPlanFallback();
 }
 
 function getPlanMinutes(planValue) {
@@ -52,11 +60,42 @@ function clamp(value, lower, upper) {
 
 let maxMinutes = getPlanMinutes(getCurrentPlan());
 let selectedExplanationMode = null;
+let planSyncFrameId = null;
+
+function schedulePlanStateSync() {
+  if (planSyncFrameId !== null) {
+    return;
+  }
+
+  const runSync = () => {
+    planSyncFrameId = null;
+    syncPlanDependentState();
+  };
+
+  if (document.readyState === "loading") {
+    window.addEventListener(
+      "DOMContentLoaded",
+      () => {
+        planSyncFrameId = window.requestAnimationFrame(runSync);
+      },
+      { once: true }
+    );
+    return;
+  }
+
+  planSyncFrameId = window.requestAnimationFrame(runSync);
+}
 
 function syncPlanDependentState() {
   const currentPlan = getCurrentPlan();
   maxMinutes = getPlanMinutes(currentPlan);
   minutes = clamp(minutes, minMinutes, maxMinutes);
+
+  console.log("[TimeSelection] plan sync", {
+    plan: currentPlan,
+    maxMinutes,
+    premiumUnlocked: currentPlan !== "free",
+  });
 
   if (timeValueEl) {
     timeValueEl.textContent = String(minutes);
@@ -177,6 +216,7 @@ function setupExplanationOptions() {
 }
 
 function updateUpgradeUI() {
+  const currentPlan = getCurrentPlan();
   const tier = currentPlan;
 
   const upgradeContainer = document.getElementById("upgradeContainer");
@@ -186,6 +226,12 @@ function updateUpgradeUI() {
   if (!upgradeContainer || !upgradeText || !upgradeButton) return;
 
   const atMax = minutes >= maxMinutes;
+
+  console.log("[TimeSelection] upgrade ui", {
+    plan: tier,
+    maxMinutes,
+    atMax,
+  });
 
   if (tier === "elite") {
     upgradeContainer.style.display = "none";
@@ -270,15 +316,19 @@ minutes = maxMinutes;
 setMinutes(minutes);
 
 window.addEventListener("DOMContentLoaded", () => {
-  syncPlanDependentState();
+  schedulePlanStateSync();
+});
+
+window.addEventListener("pageshow", () => {
+  schedulePlanStateSync();
 });
 
 window.addEventListener("userPlanUpdated", () => {
-  syncPlanDependentState();
+  schedulePlanStateSync();
 });
 
-syncPlanDependentState();
 setupExplanationOptions();
+schedulePlanStateSync();
 
 if (explainUpgradeNowBtn) {
   explainUpgradeNowBtn.addEventListener("click", () => {

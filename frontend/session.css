@@ -218,10 +218,13 @@ body.session--complete .topbar {
 
 /* Position the reused back button at top-left only on the session complete screen. */
 .screen-complete .back-btn {
-  position: fixed;
-  top: 20px;
+  /* Position absolute so the button is placed relative to the complete screen
+     and scrolls with the content. Top will be calculated dynamically in JS
+     to align it with the "Session Complete" heading row. */
+  position: absolute;
   left: 20px;
   z-index: 30;
+  top: auto;
 }
 
 .complete-home-circle {
