@@ -400,37 +400,40 @@ body {
 /* Compact hero feature highlights (concise, conversion-focused) */
 .hero-features {
   margin: 18px auto 6px;
-  display: flex;
-  gap: 12px 18px;
-  justify-content: center;
-  align-items: stretch;
-  max-width: 960px;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  max-width: 980px;
 }
 
 .hero-feature {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  min-width: 160px;
-  max-width: 220px;
+  gap: 7px;
   text-align: left;
   color: rgba(210, 210, 210, 0.95);
-  background: transparent;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 18px;
+  padding: 16px 16px 15px;
+  backdrop-filter: blur(14px);
+  box-shadow: 0 14px 48px rgba(0, 0, 0, 0.2);
+  min-height: 118px;
 }
 
 .hero-feature strong {
   display: block;
   color: rgba(255, 255, 255, 0.96);
-  font-weight: 800;
+  font-weight: 850;
   font-size: 14px;
+  letter-spacing: -0.01em;
 }
 
 .hero-feature span {
   display: block;
   font-size: 13px;
   color: rgba(190, 190, 190, 0.92);
-  line-height: 1.45;
+  line-height: 1.55;
 }
 
 .learn-form {
@@ -583,6 +586,22 @@ body {
   .input-glass input {
     font-size: 15px;
     padding: 16px 56px 16px 16px;
+  }
+
+  .hero-features {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .hero-feature {
+    min-height: 0;
+    padding: 15px;
+  }
+}
+
+@media (min-width: 521px) and (max-width: 900px) {
+  .hero-features {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 

@@ -264,13 +264,15 @@ function updateUpgradeUI() {
   }
 
   if (tier === "free") {
-    upgradeText.innerText = "Upgrade to Pro for longer sessions";
+    upgradeText.innerText =
+      "Unlock the full Elite toolkit with longer focus sessions, advanced AI personas, and exam-ready knowledge packs.";
   } else if (tier === "pro") {
     upgradeText.innerText =
-      "Upgrade to Elite for even longer sessions and better AI";
+      "Move into Elite for longer focus sessions, advanced AI personas, and exam-ready knowledge packs.";
   }
 
   upgradeText.style.display = "";
+  upgradeButton.textContent = "Unlock Elite";
 
   if (atMax) {
     upgradeContainer.style.display = "flex";
