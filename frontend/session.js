@@ -157,13 +157,19 @@ function positionHomeButton() {
     btn.style.position = "absolute";
     btn.style.left = "20px";
 
+    const isMobileViewport = window.matchMedia("(max-width: 520px)").matches;
+    const mobileTopNudge = isMobileViewport ? 8 : 0;
+
     const screenRect = complete.getBoundingClientRect();
     const titleRect = title.getBoundingClientRect();
 
     // Compute title top relative to the complete screen
     const offsetTop = titleRect.top - screenRect.top;
     const btnHeight = btn.offsetHeight || 40;
-    const top = Math.max(10, Math.round(offsetTop + titleRect.height / 2 - btnHeight / 2 - 4));
+    const top = Math.max(
+      10,
+      Math.round(offsetTop + titleRect.height / 2 - btnHeight / 2 - 4 - mobileTopNudge)
+    );
 
     btn.style.top = top + "px";
   } catch (e) {
