@@ -44,6 +44,422 @@ let selectedFormat = null;
 let generatedNotes = "";
 let isGenerating = false;
 let isDownloading = false;
+let sessionMathBlocks = new Map();
+
+function isKatexAvailable() {
+  return typeof window.katex !== "undefined" && typeof window.katex.renderToString === "function";
+}
+
+function escapeHtml(s) {
+  return String(s)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+function applyInlineBold(escapedText) {
+  return escapedText.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
+}
+
+function looksLikeMathContent(text) {
+  const normalized = String(text || "").trim();
+  if (!normalized) return false;
+
+  const hasMathOperator =
+    normalized.includes("=") ||
+    normalized.includes("^") ||
+    normalized.includes("_") ||
+    normalized.includes("/") ||
+    normalized.includes("+") ||
+    normalized.includes("-") ||
+    normalized.includes("*");
+
+  if (hasMathOperator && /[A-Za-z0-9]/.test(normalized)) return true;
+
+  return false;
+}
+
+function makeMathToken(index) {
+  return `@@LOCKEDIN_MATH_BLOCK_${index}@@`;
+}
+
+function findEscapedClosing(text, startIndex, closeChar) {
+  for (let index = startIndex; index < text.length - 1; index += 1) {
+    if (text[index] !== "\\" || text[index + 1] !== closeChar) continue;
+    if (isEscaped(text, index)) continue;
+    return index;
+  }
+  return -1;
+}
+
+function findMatchingFence(text, startIndex, openChar, closeChar) {
+  let depth = 0;
+  for (let index = startIndex; index < text.length; index += 1) {
+    const char = text[index];
+    if (char === "\\") {
+      index += 1;
+      continue;
+    }
+
+    if (char === openChar) {
+      depth += 1;
+      continue;
+    }
+
+    if (char === closeChar) {
+      if (depth === 0) {
+        return index;
+      }
+      depth -= 1;
+    }
+  }
+
+  return -1;
+}
+
+function extractSessionMathBlocks(markdown) {
+  const source = String(markdown || "");
+  const blocks = [];
+  let output = "";
+
+  function appendMathBlock(startIndex, endIndex, latex, displayMode) {
+    const token = makeMathToken(blocks.length);
+    blocks.push({ token, latex, displayMode });
+    output += token;
+    return endIndex + 1;
+  }
+
+  for (let index = 0; index < source.length; index += 1) {
+    const char = source[index];
+
+    if (char === "\\" && source[index + 1] === "(") {
+      const closingIndex = findEscapedClosing(source, index + 2, ")");
+      if (closingIndex !== -1) {
+        const latex = source.slice(index + 2, closingIndex);
+        index = appendMathBlock(index, closingIndex + 1, latex, false) - 1;
+        continue;
+      }
+    }
+
+    if (char === "\\" && source[index + 1] === "[") {
+      const closingIndex = findEscapedClosing(source, index + 2, "]");
+      if (closingIndex !== -1) {
+        const latex = source.slice(index + 2, closingIndex);
+        index = appendMathBlock(index, closingIndex + 1, latex, true) - 1;
+        continue;
+      }
+    }
+
+    if (char === "$") {
+      const isDisplay = source[index + 1] === "$";
+      const openingLength = isDisplay ? 2 : 1;
+      const closingIndex = findClosingDelimiter(source, index + openingLength, isDisplay ? "$$" : "$");
+      if (closingIndex !== -1) {
+        const latex = source.slice(index + openingLength, closingIndex);
+        index = appendMathBlock(index, closingIndex + openingLength - 1, latex, isDisplay) - 1;
+        continue;
+      }
+    }
+
+    if (char === "(") {
+      const closingIndex = findMatchingFence(source, index + 1, "(", ")");
+      if (closingIndex !== -1) {
+        const latex = source.slice(index + 1, closingIndex);
+        if (looksLikeMathContent(latex)) {
+          index = appendMathBlock(index, closingIndex, latex, false) - 1;
+          continue;
+        }
+      }
+    }
+
+    if (char === "[") {
+      const closingIndex = findMatchingFence(source, index + 1, "[", "]");
+      if (closingIndex !== -1) {
+        const latex = source.slice(index + 1, closingIndex);
+        if (looksLikeMathContent(latex)) {
+          index = appendMathBlock(index, closingIndex, latex, true) - 1;
+          continue;
+        }
+      }
+    }
+
+    output += char;
+  }
+
+  return { markdown: output, blocks };
+}
+
+function renderMathToken(token) {
+  const block = sessionMathBlocks.get(token);
+  if (!block) return token;
+  return renderLatex(block.latex, block.displayMode);
+}
+
+function readMathToken(text, index) {
+  const prefix = "@@LOCKEDIN_MATH_BLOCK_";
+  if (!text.startsWith(prefix, index)) return null;
+
+  const endIndex = text.indexOf("@@", index + prefix.length);
+  if (endIndex === -1) return null;
+
+  const token = text.slice(index, endIndex + 2);
+  if (!sessionMathBlocks.has(token)) return null;
+
+  return { token, length: token.length };
+}
+
+function createMathTokenBlock(token) {
+  const block = sessionMathBlocks.get(token);
+  if (!block) return null;
+  return createMathBlock(block.latex);
+}
+
+function isMathTokenLine(trimmedLine) {
+  return typeof trimmedLine === "string" && sessionMathBlocks.has(trimmedLine);
+}
+
+function isEscaped(text, index) {
+  let backslashCount = 0;
+  for (let cursor = index - 1; cursor >= 0 && text[cursor] === "\\"; cursor -= 1) {
+    backslashCount += 1;
+  }
+  return backslashCount % 2 === 1;
+}
+
+function findClosingDelimiter(text, startIndex, delimiter) {
+  for (let index = startIndex; index < text.length; index += 1) {
+    if (text[index] !== "$") continue;
+    if (delimiter === "$$") {
+      if (text[index + 1] !== "$") continue;
+      if (isEscaped(text, index)) {
+        index += 1;
+        continue;
+      }
+      return index;
+    }
+
+    if (text[index + 1] === "$") continue;
+    if (isEscaped(text, index)) continue;
+    return index;
+  }
+
+  return -1;
+}
+
+function renderLatex(latex, displayMode) {
+  const normalizedLatex = String(latex || "").trim();
+  if (!normalizedLatex) {
+    return displayMode ? '<div class="math-fallback"></div>' : "";
+  }
+
+  if (!isKatexAvailable()) {
+    return `<span class="math-fallback">${escapeHtml(displayMode ? `$$${normalizedLatex}$$` : `$${normalizedLatex}$`)}</span>`;
+  }
+
+  try {
+    return window.katex.renderToString(normalizedLatex, {
+      displayMode,
+      throwOnError: false,
+      strict: "warn",
+      trust: false,
+    });
+  } catch (_error) {
+    return `<span class="math-fallback">${escapeHtml(displayMode ? `$$${normalizedLatex}$$` : `$${normalizedLatex}$`)}</span>`;
+  }
+}
+
+function renderInlineContent(rawText) {
+  const text = String(rawText || "");
+  if (!text) return "";
+
+  let html = "";
+  let buffer = "";
+
+  const flushBuffer = () => {
+    if (!buffer) return;
+    html += applyInlineBold(escapeHtml(buffer));
+    buffer = "";
+  };
+
+  for (let index = 0; index < text.length; index += 1) {
+    const char = text[index];
+
+    const mathToken = readMathToken(text, index);
+    if (mathToken) {
+      flushBuffer();
+      html += renderMathToken(mathToken.token);
+      index += mathToken.length - 1;
+      continue;
+    }
+
+    if (char === "\\" && text[index + 1] === "$") {
+      buffer += "$";
+      index += 1;
+      continue;
+    }
+
+    if (char === "$") {
+      const displayMode = text[index + 1] === "$";
+      const openingLength = displayMode ? 2 : 1;
+      const closingIndex = findClosingDelimiter(text, index + openingLength, displayMode ? "$$" : "$");
+
+      if (closingIndex !== -1) {
+        flushBuffer();
+        const latex = text.slice(index + openingLength, closingIndex);
+        html += renderLatex(latex, displayMode);
+        index = closingIndex + openingLength - 1;
+        continue;
+      }
+    }
+
+    if (char === "\\" && text[index + 1] === "(") {
+      const closingIndex = findEscapedClosing(text, index + 2, ")");
+      if (closingIndex !== -1) {
+        flushBuffer();
+        const latex = text.slice(index + 2, closingIndex);
+        html += renderLatex(latex, false);
+        index = closingIndex + 1;
+        continue;
+      }
+    }
+
+    if (char === "\\" && text[index + 1] === "[") {
+      const closingIndex = findEscapedClosing(text, index + 2, "]");
+      if (closingIndex !== -1) {
+        flushBuffer();
+        const latex = text.slice(index + 2, closingIndex);
+        html += renderLatex(latex, true);
+        index = closingIndex + 1;
+        continue;
+      }
+    }
+
+    buffer += char;
+  }
+
+  flushBuffer();
+  return html;
+}
+
+function createMarkdownBlock(tagName, className, rawText) {
+  const element = document.createElement(tagName);
+  if (className) {
+    element.className = className;
+  }
+  element.innerHTML = renderInlineContent(rawText);
+  return element;
+}
+
+function createMathBlock(rawLatex) {
+  const block = document.createElement("div");
+  block.className = "math-block";
+  block.innerHTML = renderLatex(rawLatex, true);
+  return block;
+}
+
+function appendMarkdownLine(fragment, rendererState, rawLine) {
+  const trimmed = rawLine.trim();
+
+  if (isMathTokenLine(trimmed)) {
+    rendererState.listEl = null;
+    const mathBlock = createMathTokenBlock(trimmed);
+    if (mathBlock) {
+      fragment.appendChild(mathBlock);
+    }
+    return;
+  }
+
+  if (rendererState.mathBlock) {
+    const closingIndex = rawLine.indexOf("$$");
+    if (closingIndex === -1) {
+      rendererState.mathBlock.lines.push(rawLine);
+      return;
+    }
+
+    rendererState.mathBlock.lines.push(rawLine.slice(0, closingIndex));
+    fragment.appendChild(createMathBlock(rendererState.mathBlock.lines.join("\n")));
+    rendererState.mathBlock = null;
+
+    const remainder = rawLine.slice(closingIndex + 2).trim();
+    if (remainder) {
+      appendMarkdownLine(fragment, rendererState, remainder);
+    }
+    return;
+  }
+
+  if (trimmed.startsWith("$$")) {
+    const endIndex = trimmed.lastIndexOf("$$");
+    if (endIndex > 1) {
+      const latex = trimmed.slice(2, endIndex);
+      fragment.appendChild(createMathBlock(latex));
+      const remainder = trimmed.slice(endIndex + 2).trim();
+      if (remainder) {
+        appendMarkdownLine(fragment, rendererState, remainder);
+      }
+      return;
+    }
+
+    rendererState.mathBlock = { lines: [rawLine.slice(rawLine.indexOf("$$") + 2)] };
+    return;
+  }
+
+  if (trimmed === "") {
+    rendererState.listEl = null;
+    return;
+  }
+
+  if (/^####\s+/.test(trimmed)) {
+    rendererState.listEl = null;
+    fragment.appendChild(
+      createMarkdownBlock("h4", "session-subheading", trimmed.replace(/^####\s+/, ""))
+    );
+    return;
+  }
+
+  if (/^###\s+/.test(trimmed)) {
+    rendererState.listEl = null;
+    fragment.appendChild(createMarkdownBlock("h3", "", trimmed.replace(/^###\s+/, "")));
+    return;
+  }
+
+  if (/^##\s+/.test(trimmed)) {
+    rendererState.listEl = null;
+    fragment.appendChild(createMarkdownBlock("h2", "", trimmed.replace(/^##\s+/, "")));
+    return;
+  }
+
+  if (/^[-*]\s+/.test(trimmed)) {
+    if (!rendererState.listEl) {
+      rendererState.listEl = document.createElement("ul");
+      fragment.appendChild(rendererState.listEl);
+    }
+
+    rendererState.listEl.appendChild(
+      createMarkdownBlock("li", "", trimmed.replace(/^[-*]\s+/, ""))
+    );
+    return;
+  }
+
+  rendererState.listEl = null;
+  fragment.appendChild(createMarkdownBlock("p", "", trimmed));
+}
+
+function buildMarkdownFragment(markdown) {
+  const normalizedMarkdown = String(markdown || "");
+  const fragment = document.createDocumentFragment();
+  const rendererState = { listEl: null, mathBlock: null };
+
+  const extracted = extractSessionMathBlocks(normalizedMarkdown.replace(/\r\n/g, "\n"));
+  sessionMathBlocks = new Map(extracted.blocks.map((block) => [block.token, block]));
+
+  const lines = extracted.markdown.split("\n");
+  for (let index = 0; index < lines.length; index += 1) {
+    appendMarkdownLine(fragment, rendererState, lines[index]);
+  }
+
+  return fragment;
+}
 
 function normalizePlan(plan) {
   const normalized = String(plan || "").trim().toLowerCase();
@@ -170,69 +586,117 @@ function downloadBlob(content, mimeType, filename) {
   window.URL.revokeObjectURL(url);
 }
 
-function buildPdfFromText(rawText, title) {
+async function buildPdfFromText(rawText, title, filename) {
   const jspdfNs = window.jspdf;
   if (!jspdfNs || typeof jspdfNs.jsPDF !== "function") {
     throw new Error("PDF engine unavailable");
   }
 
   const doc = new jspdfNs.jsPDF({ unit: "pt", format: "a4" });
-  const pageWidth = doc.internal.pageSize.getWidth();
-  const pageHeight = doc.internal.pageSize.getHeight();
-  const marginX = 44;
-  const marginTop = 52;
-  const marginBottom = 48;
-  const maxLineWidth = pageWidth - marginX * 2;
+  const exportContainer = document.createElement("div");
+  exportContainer.style.position = "fixed";
+  exportContainer.style.left = "-10000px";
+  exportContainer.style.top = "0";
+  exportContainer.style.width = "760px";
+  exportContainer.style.padding = "36px 40px";
+  exportContainer.style.background = "#ffffff";
+  exportContainer.style.color = "#111827";
+  exportContainer.style.boxSizing = "border-box";
+  exportContainer.style.fontFamily = "Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif";
+  exportContainer.style.lineHeight = "1.6";
+  exportContainer.style.wordBreak = "break-word";
+  exportContainer.innerHTML = `
+    <style>
+      h1, h2, h3, h4, p, ul { margin-top: 0; }
+      h1 { font-size: 24px; margin-bottom: 18px; }
+      h2 { font-size: 18px; margin: 18px 0 10px; }
+      h3 { font-size: 16px; margin: 16px 0 8px; }
+      h4 { font-size: 15px; margin: 14px 0 8px; }
+      p, li { font-size: 12px; margin-bottom: 8px; }
+      ul { padding-left: 20px; margin-bottom: 12px; }
+      .math-block { margin: 10px 0; overflow-x: auto; }
+      .katex-display { margin: 0; overflow-x: auto; overflow-y: hidden; }
+      .math-fallback { white-space: pre-wrap; word-break: break-word; }
+    </style>
+  `;
 
-  let y = marginTop;
+  const titleEl = document.createElement("h1");
+  titleEl.textContent = title;
+  exportContainer.appendChild(titleEl);
+  exportContainer.appendChild(buildMarkdownFragment(String(rawText || "")));
+  document.body.appendChild(exportContainer);
 
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(16);
-  const titleLines = doc.splitTextToSize(title, maxLineWidth);
-  titleLines.forEach((line) => {
-    if (y > pageHeight - marginBottom) {
-      doc.addPage();
-      y = marginTop;
-    }
-    doc.text(line, marginX, y);
-    y += 20;
-  });
-
-  y += 6;
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(11);
-
-  const sourceLines = String(rawText)
-    .replace(/\r\n/g, "\n")
-    .split("\n");
-
-  sourceLines.forEach((line) => {
-    const trimmed = line.trim();
-    const isHeading = /^#{1,6}\s+/.test(trimmed) || /^[A-Za-z][A-Za-z\s]+:$/.test(trimmed);
-    const paragraph = trimmed || " ";
-    const chunks = doc.splitTextToSize(paragraph, maxLineWidth);
-
-    if (isHeading) {
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(12);
-    } else {
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(11);
-    }
-
-    chunks.forEach((chunk) => {
-      if (y > pageHeight - marginBottom) {
-        doc.addPage();
-        y = marginTop;
+  try {
+    if (typeof doc.html === "function" && typeof window.html2canvas === "function") {
+      let timeoutId = null;
+      await Promise.race([
+        new Promise((resolve, reject) => {
+          try {
+            doc.html(exportContainer, {
+              margin: [24, 24, 24, 24],
+              autoPaging: "text",
+              x: 0,
+              y: 0,
+              width: 562,
+              windowWidth: 760,
+              callback: resolve,
+              html2canvas: { scale: 1 },
+            });
+          } catch (error) {
+            reject(error);
+          }
+        }),
+        new Promise((_, reject) => {
+          timeoutId = window.setTimeout(() => {
+            reject(new Error("HTML PDF export timed out"));
+          }, 12000);
+        }),
+      ]);
+      if (timeoutId) {
+        window.clearTimeout(timeoutId);
       }
-      doc.text(chunk, marginX, y);
-      y += isHeading ? 18 : 15;
+      doc.save(filename);
+      return doc;
+    }
+
+    if (typeof window.html2canvas !== "function") {
+      throw new Error("HTML PDF export unavailable");
+    }
+
+    const canvas = await window.html2canvas(exportContainer, {
+      scale: 2,
+      backgroundColor: "#ffffff",
+      useCORS: true,
     });
 
-    y += trimmed ? 4 : 8;
-  });
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const margin = 24;
+    const imageWidth = pageWidth - margin * 2;
+    const imageHeight = (canvas.height * imageWidth) / canvas.width;
+    const pageHeightAvailable = pageHeight - margin * 2;
+    const imageData = canvas.toDataURL("image/png");
 
-  return doc;
+    let remainingHeight = imageHeight;
+    let yOffset = margin;
+
+    doc.addImage(imageData, "PNG", margin, yOffset, imageWidth, imageHeight);
+    remainingHeight -= pageHeightAvailable;
+
+    while (remainingHeight > 0) {
+      yOffset = remainingHeight - imageHeight + margin;
+      doc.addPage();
+      doc.addImage(imageData, "PNG", margin, yOffset, imageWidth, imageHeight);
+      remainingHeight -= pageHeightAvailable;
+    }
+
+    doc.save(filename);
+    return doc;
+  } finally {
+    if (exportContainer.parentNode) {
+      exportContainer.parentNode.removeChild(exportContainer);
+    }
+  }
 }
 
 function showLoadingState() {
@@ -298,7 +762,7 @@ async function generateKnowledgePack() {
   }
 }
 
-function downloadNotes() {
+async function downloadNotes() {
   if (!downloadNotesBtn || isDownloading) return;
 
   if (!generatedNotes) {
@@ -321,11 +785,10 @@ function downloadNotes() {
 
     if (effectiveFormat === "pdf" || effectiveFormat === "exam") {
       const title = effectiveFormat === "exam" ? "Exam Mode Notes" : "PDF Notes";
-      const doc = buildPdfFromText(content, title);
       const fileName = effectiveFormat === "exam"
         ? `${baseName}-exam-mode-notes.pdf`
         : `${baseName}-notes.pdf`;
-      doc.save(fileName);
+      await buildPdfFromText(content, title, fileName);
       window.localStorage.removeItem("lockedin_generated_notes");
       return;
     }

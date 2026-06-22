@@ -53,6 +53,7 @@ let completedSeconds = 0;
 let rating = 0;
 let sessionMarkdownRenderToken = 0;
 let sessionMarkdownRenderFrameId = null;
+let sessionMathBlocks = new Map();
 
 function normalizePlan(plan) {
   const normalized = String(plan || "").trim().toLowerCase();
@@ -471,12 +472,358 @@ function createMarkdownBlock(tagName, className, rawText) {
   if (className) {
     element.className = className;
   }
-  element.innerHTML = applyInlineBold(escapeHtml(rawText));
+  element.innerHTML = renderInlineContent(rawText);
   return element;
+}
+
+function isKatexAvailable() {
+  return typeof window.katex !== "undefined" && typeof window.katex.renderToString === "function";
+}
+
+function renderLatex(latex, displayMode) {
+  const normalizedLatex = String(latex || "").trim();
+  if (!normalizedLatex) {
+    return displayMode ? '<div class="math-fallback"></div>' : "";
+  }
+
+  if (!isKatexAvailable()) {
+    return `<span class="math-fallback">${escapeHtml(displayMode ? `$$${normalizedLatex}$$` : `$${normalizedLatex}$`)}</span>`;
+  }
+
+  try {
+    return window.katex.renderToString(normalizedLatex, {
+      displayMode,
+      throwOnError: false,
+      strict: "warn",
+      trust: false,
+    });
+  } catch (_error) {
+    return `<span class="math-fallback">${escapeHtml(displayMode ? `$$${normalizedLatex}$$` : `$${normalizedLatex}$`)}</span>`;
+  }
+}
+
+function isEscaped(text, index) {
+  let backslashCount = 0;
+  for (let cursor = index - 1; cursor >= 0 && text[cursor] === "\\"; cursor -= 1) {
+    backslashCount += 1;
+  }
+  return backslashCount % 2 === 1;
+}
+
+function looksLikeMathContent(text) {
+  const normalized = String(text || "").trim();
+  if (!normalized) return false;
+
+  if (/\\[A-Za-z]+/.test(normalized)) return true;
+  if (/\b(?:sin|cos|tan|log|ln|exp|frac|sqrt|sum|prod|int)\b/.test(normalized)) return true;
+
+  const hasMathOperator =
+    normalized.includes("=") ||
+    normalized.includes("^") ||
+    normalized.includes("_") ||
+    normalized.includes("/") ||
+    normalized.includes("+") ||
+    normalized.includes("-") ||
+    normalized.includes("*");
+
+  if (hasMathOperator && /[A-Za-z0-9]/.test(normalized)) return true;
+
+  return false;
+}
+
+function makeMathToken(index) {
+  return `@@LOCKEDIN_MATH_BLOCK_${index}@@`;
+}
+
+function findEscapedClosing(text, startIndex, closeChar) {
+  for (let index = startIndex; index < text.length - 1; index += 1) {
+    if (text[index] !== "\\" || text[index + 1] !== closeChar) continue;
+    if (isEscaped(text, index)) continue;
+    return index;
+  }
+  return -1;
+}
+
+function extractSessionMathBlocks(markdown) {
+  const source = String(markdown || "");
+  const blocks = [];
+  let output = "";
+
+  function appendMathBlock(startIndex, endIndex, latex, displayMode) {
+    const token = makeMathToken(blocks.length);
+    blocks.push({ token, latex, displayMode });
+    output += token;
+    return endIndex + 1;
+  }
+
+  for (let index = 0; index < source.length; index += 1) {
+    const char = source[index];
+
+    if (char === "\\" && source[index + 1] === "(") {
+      const closingIndex = findEscapedClosing(source, index + 2, ")");
+      if (closingIndex !== -1) {
+        const latex = source.slice(index + 2, closingIndex);
+        index = appendMathBlock(index, closingIndex + 1, latex, false) - 1;
+        continue;
+      }
+    }
+
+    if (char === "\\" && source[index + 1] === "[") {
+      const closingIndex = findEscapedClosing(source, index + 2, "]");
+      if (closingIndex !== -1) {
+        const latex = source.slice(index + 2, closingIndex);
+        index = appendMathBlock(index, closingIndex + 1, latex, true) - 1;
+        continue;
+      }
+    }
+
+    if (char === "$") {
+      const isDisplay = source[index + 1] === "$";
+      const openingLength = isDisplay ? 2 : 1;
+      const closingIndex = findClosingDelimiter(source, index + openingLength, isDisplay ? "$$" : "$");
+      if (closingIndex !== -1) {
+        const latex = source.slice(index + openingLength, closingIndex);
+        index = appendMathBlock(index, closingIndex + openingLength - 1, latex, isDisplay) - 1;
+        continue;
+      }
+    }
+
+    if (char === "(") {
+      const closingIndex = findMatchingFence(source, index + 1, "(", ")");
+      if (closingIndex !== -1) {
+        const latex = source.slice(index + 1, closingIndex);
+        if (looksLikeMathContent(latex)) {
+          index = appendMathBlock(index, closingIndex, latex, false) - 1;
+          continue;
+        }
+      }
+    }
+
+    if (char === "[") {
+      const closingIndex = findMatchingFence(source, index + 1, "[", "]");
+      if (closingIndex !== -1) {
+        const latex = source.slice(index + 1, closingIndex);
+        if (looksLikeMathContent(latex)) {
+          index = appendMathBlock(index, closingIndex, latex, true) - 1;
+          continue;
+        }
+      }
+    }
+
+    output += char;
+  }
+
+  return { markdown: output, blocks };
+}
+
+function renderMathToken(token) {
+  const block = sessionMathBlocks.get(token);
+  if (!block) return token;
+  return renderLatex(block.latex, block.displayMode);
+}
+
+function readMathToken(text, index) {
+  const prefix = "@@LOCKEDIN_MATH_BLOCK_";
+  if (!text.startsWith(prefix, index)) return null;
+
+  const endIndex = text.indexOf("@@", index + prefix.length);
+  if (endIndex === -1) return null;
+
+  const token = text.slice(index, endIndex + 2);
+  if (!sessionMathBlocks.has(token)) return null;
+
+  return { token, length: token.length };
+}
+
+function findMatchingFence(text, startIndex, openChar, closeChar) {
+  let depth = 0;
+  for (let index = startIndex; index < text.length; index += 1) {
+    const char = text[index];
+    if (char === "\\") {
+      index += 1;
+      continue;
+    }
+
+    if (char === openChar) {
+      depth += 1;
+      continue;
+    }
+
+    if (char === closeChar) {
+      if (depth === 0) {
+        return index;
+      }
+      depth -= 1;
+    }
+  }
+
+  return -1;
+}
+
+function findBalancedBlock(text, startIndex, openChar, closeChar) {
+  const closingIndex = findMatchingFence(text, startIndex, openChar, closeChar);
+  if (closingIndex === -1) return -1;
+
+  const content = text.slice(startIndex, closingIndex);
+  if (!looksLikeMathContent(content)) return -1;
+  return closingIndex;
+}
+
+function findClosingDelimiter(text, startIndex, delimiter) {
+  for (let index = startIndex; index < text.length; index += 1) {
+    if (text[index] !== "$") continue;
+    if (delimiter === "$$") {
+      if (text[index + 1] !== "$") continue;
+      if (isEscaped(text, index)) {
+        index += 1;
+        continue;
+      }
+      return index;
+    }
+
+    if (text[index + 1] === "$") continue;
+    if (isEscaped(text, index)) continue;
+    return index;
+  }
+
+  return -1;
+}
+
+function renderInlineContent(rawText) {
+  const text = String(rawText || "");
+  if (!text) return "";
+
+  let html = "";
+  let buffer = "";
+
+  const flushBuffer = () => {
+    if (!buffer) return;
+    html += applyInlineBold(escapeHtml(buffer));
+    buffer = "";
+  };
+
+  for (let index = 0; index < text.length; index += 1) {
+    const char = text[index];
+
+    const mathToken = readMathToken(text, index);
+    if (mathToken) {
+      flushBuffer();
+      html += renderMathToken(mathToken.token);
+      index += mathToken.length - 1;
+      continue;
+    }
+
+    if (char === "\\" && text[index + 1] === "$") {
+      buffer += "$";
+      index += 1;
+      continue;
+    }
+
+    if (char === "$") {
+      const displayMode = text[index + 1] === "$";
+      const openingLength = displayMode ? 2 : 1;
+      const closingIndex = findClosingDelimiter(text, index + openingLength, displayMode ? "$$" : "$");
+
+      if (closingIndex !== -1) {
+        flushBuffer();
+        const latex = text.slice(index + openingLength, closingIndex);
+        html += renderLatex(latex, displayMode);
+        index = closingIndex + openingLength - 1;
+        continue;
+      }
+    }
+
+    if (char === "\\" && text[index + 1] === "(") {
+      const closingIndex = findEscapedClosing(text, index + 2, ")");
+      if (closingIndex !== -1) {
+        flushBuffer();
+        const latex = text.slice(index + 2, closingIndex);
+        html += renderLatex(latex, false);
+        index = closingIndex + 1;
+        continue;
+      }
+    }
+
+    if (char === "\\" && text[index + 1] === "[") {
+      const closingIndex = findEscapedClosing(text, index + 2, "]");
+      if (closingIndex !== -1) {
+        flushBuffer();
+        const latex = text.slice(index + 2, closingIndex);
+        html += renderLatex(latex, true);
+        index = closingIndex + 1;
+        continue;
+      }
+    }
+
+    buffer += char;
+  }
+
+  flushBuffer();
+  return html;
+}
+
+function createMathBlock(rawLatex) {
+  const block = document.createElement("div");
+  block.className = "math-block";
+  block.innerHTML = renderLatex(rawLatex, true);
+  return block;
+}
+
+function createMathTokenBlock(token) {
+  const block = sessionMathBlocks.get(token);
+  if (!block) return null;
+  return createMathBlock(block.latex);
+}
+
+function isMathTokenLine(trimmedLine) {
+  return typeof trimmedLine === "string" && sessionMathBlocks.has(trimmedLine);
 }
 
 function appendMarkdownLine(fragment, rendererState, rawLine) {
   const trimmed = rawLine.trim();
+
+  if (isMathTokenLine(trimmed)) {
+    rendererState.listEl = null;
+    const mathBlock = createMathTokenBlock(trimmed);
+    if (mathBlock) {
+      fragment.appendChild(mathBlock);
+    }
+    return;
+  }
+
+  if (rendererState.mathBlock) {
+    const closingIndex = rawLine.indexOf("$$");
+    if (closingIndex === -1) {
+      rendererState.mathBlock.lines.push(rawLine);
+      return;
+    }
+
+    rendererState.mathBlock.lines.push(rawLine.slice(0, closingIndex));
+    fragment.appendChild(createMathBlock(rendererState.mathBlock.lines.join("\n")));
+    rendererState.mathBlock = null;
+
+    const remainder = rawLine.slice(closingIndex + 2).trim();
+    if (remainder) {
+      appendMarkdownLine(fragment, rendererState, remainder);
+    }
+    return;
+  }
+
+  if (trimmed.startsWith("$$")) {
+    const endIndex = trimmed.lastIndexOf("$$");
+    if (endIndex > 1) {
+      const latex = trimmed.slice(2, endIndex);
+      fragment.appendChild(createMathBlock(latex));
+      const remainder = trimmed.slice(endIndex + 2).trim();
+      if (remainder) {
+        appendMarkdownLine(fragment, rendererState, remainder);
+      }
+      return;
+    }
+
+    rendererState.mathBlock = { lines: [rawLine.slice(rawLine.indexOf("$$") + 2)] };
+    return;
+  }
 
   if (trimmed === "") {
     rendererState.listEl = null;
@@ -544,12 +891,15 @@ function renderSessionMarkdown(markdown, { startedAt = null } = {}) {
     // Ignore storage failures; rendering should still continue.
   }
 
-  const lines = normalizedMarkdown.replace(/\r\n/g, "\n").split("\n");
+  const extracted = extractSessionMathBlocks(normalizedMarkdown.replace(/\r\n/g, "\n"));
+  sessionMathBlocks = new Map(extracted.blocks.map((block) => [block.token, block]));
+
+  const lines = extracted.markdown.split("\n");
   if (lines.length === 1 && lines[0] === "") {
     return;
   }
 
-  const rendererState = { listEl: null };
+  const rendererState = { listEl: null, mathBlock: null };
   const renderToken = sessionMarkdownRenderToken;
   const renderStartAt = window.performance.now();
   const fragment = document.createDocumentFragment();

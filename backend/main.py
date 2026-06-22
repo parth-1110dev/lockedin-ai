@@ -34,6 +34,21 @@ client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 SYSTEM_PROMPT_BASE = """You are LockedIn's learning engine.
 Write concise, high-signal lesson content in Markdown.
+HIGH-PRIORITY MATH FORMATTING:
+- Always format mathematical content in valid LaTeX.
+- Inline: $E = mc^2$
+- Display:
+$$
+a^2 + b^2 = c^2
+$$
+- # Display:
+$$
+\frac{\partial f}{\partial x}
+\lim_{h \to 0}
+\frac{f(x+h)-f(x)}{h}
+$$
+- Never output mathematical expressions, equations, fractions, superscripts, subscripts, derivatives, integrals, summations, matrices, scientific notation, chemistry notation, or ML formulas outside LaTeX delimiters.
+- Before returning the response, verify that every formula is wrapped in either $...$ or $$...$$.
 Use exactly these sections in this order:
 1. Introduction
 2. Core Concepts
@@ -47,6 +62,8 @@ Rules:
 - Avoid filler, repetition, and chatbot-style replies.
 - Use short paragraphs and bullets when useful.
 - Do not ask the user questions.
+- When math, science, statistics, physics, chemistry, engineering, or machine learning notation appears, write formulas in valid LaTeX using $...$ for inline math and $$...$$ for display math.
+- Preserve LaTeX delimiters exactly so the frontend can render them.
 - Return only the lesson content."""
 
 
@@ -903,6 +920,8 @@ async def generate_content(request: Request, data: dict):
                 "Keep the 7 required sections in the exact order.",
                 "Match depth to the session length.",
                 "Stay on topic and do not invent unrelated modules.",
+                "Use valid LaTeX for any formulas, equations, symbols, or scientific notation.",
+                "Keep $...$ and $$...$$ delimiters intact in the output.",
             ],
         }
 
@@ -969,6 +988,14 @@ async def generate_knowledge_pack(request: Request, data: dict):
             system_prompt = """You are a knowledge extraction specialist.
 Convert the provided session content into structured notes.
 Be concise, organized, and focus on key learnings.
+MATHEMATICAL FORMATTING (MANDATORY):
+- When mathematical, scientific, engineering, economics, statistics, physics, chemistry, or machine-learning notation appears, always use valid LaTeX.
+- Inline formulas must use $...$.
+- Display formulas must use $$...$$.
+- Never output mathematical expressions outside LaTeX delimiters.
+- Preserve fractions, derivatives, integrals, summations, matrices, gradients, superscripts, subscripts, and scientific notation as valid LaTeX.
+- Before returning notes, verify that every formula, exponent, fraction, derivative, integral, summation, matrix, gradient, or scientific expression is wrapped in LaTeX delimiters.
+Preserve any mathematical, scientific, or technical notation as valid LaTeX using $...$ or $$...$$.
 Return only the formatted notes content."""
 
             if note_format == "exam":
@@ -1055,10 +1082,11 @@ STRICT STRUCTURE (FOLLOW EXACTLY):
 
 STRICT FORMATTING RULES (NON-NEGOTIABLE):
 
-1. Use ONLY standard ASCII characters
+1. Use ASCII characters for normal text, but preserve all mathematical content as valid LaTeX.
 - Use <=, >= instead of special symbols
 - Use -> instead of arrows
 - DO NOT use fancy quotes or symbols
+- Exception: mathematical content should remain valid LaTeX with $...$ and $$...$$ delimiters.
 
 2. Avoid broken characters or encoding artifacts
 
@@ -1094,6 +1122,7 @@ FORMAT:
 ## Summary
 
 Keep it clean, structured, and easy to revise.
+Preserve math notation in valid LaTeX if present.
 Return valid Markdown only."""
             elif note_format == "notion":
                 format_instruction = """Convert the session content into structured notes for Notion.
@@ -1107,6 +1136,7 @@ FORMAT:
 # Summary
 
 Keep it clean, structured, and easy to revise.
+Preserve math notation in valid LaTeX if present.
 Use headings and bullets only. Avoid raw/unformatted text."""
             else:  # PDF
                 format_instruction = """Convert the session content into structured notes for PDF export.

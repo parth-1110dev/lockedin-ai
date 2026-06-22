@@ -370,6 +370,24 @@ body.session--complete .topbar {
   color: #ffffff;
 }
 
+.ai-output .session-content .math-block {
+  margin: 14px 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 2px 0;
+}
+
+.ai-output .session-content .katex-display {
+  margin: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.ai-output .session-content .math-fallback {
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
 .ai-output .session-content-plain {
   color: #ffffff;
   max-width: 700px;

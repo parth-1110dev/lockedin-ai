@@ -260,6 +260,22 @@
   margin: 0;
 }
 
+.katex-display {
+  margin: 0.6em 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.math-block {
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.math-fallback {
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
 .preview-item {
   padding: 14px 16px;
   border-radius: 12px;
