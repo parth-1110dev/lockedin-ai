@@ -596,16 +596,18 @@ async function buildPdfFromText(rawText, title, filename) {
   }
 
   const doc = new jspdfNs.jsPDF({ unit: "pt", format: "a4" });
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const sidePaddingPx = 60;
+  const sideMarginPt = 45;
   const exportContainer = document.createElement("div");
   exportContainer.style.position = "fixed";
-  exportContainer.style.left = "0";
+  exportContainer.style.left = "-10000px";
   exportContainer.style.top = "0";
-  exportContainer.style.opacity = "0.01";
+  exportContainer.style.opacity = "1";
   exportContainer.style.pointerEvents = "none";
   exportContainer.style.zIndex = "-1";
-  exportContainer.style.top = "0";
   exportContainer.style.width = "760px";
-  exportContainer.style.padding = "36px 40px";
+  exportContainer.style.padding = `36px ${sidePaddingPx}px`;
   exportContainer.style.background = "#ffffff";
   exportContainer.style.color = "#111827";
   exportContainer.style.boxSizing = "border-box";
@@ -631,21 +633,33 @@ async function buildPdfFromText(rawText, title, filename) {
   titleEl.textContent = title;
   exportContainer.appendChild(titleEl);
   exportContainer.appendChild(buildMarkdownFragment(String(rawText || "")));
-  console.log(exportContainer.innerHTML);
   document.body.appendChild(exportContainer);
 
   try {
+    await new Promise((resolve) => {
+      window.requestAnimationFrame(() => {
+        window.requestAnimationFrame(resolve);
+      });
+    });
+
+    if (sessionMathBlocks.size > 0) {
+      const katexNodes = exportContainer.querySelectorAll(".katex, .katex-display, .math-fallback");
+      if (!katexNodes.length) {
+        throw new Error("KaTeX render missing in export container");
+      }
+    }
+
     if (typeof doc.html === "function" && typeof window.html2canvas === "function") {
       let timeoutId = null;
       await Promise.race([
         new Promise((resolve, reject) => {
           try {
             doc.html(exportContainer, {
-              margin: [24, 24, 24, 24],
+              margin: [36, sideMarginPt, 36, sideMarginPt],
               autoPaging: "text",
               x: 0,
               y: 0,
-              width: 562,
+              width: pageWidth - sideMarginPt * 2,
               windowWidth: 760,
               callback: resolve,
               html2canvas: { scale: 1 },
@@ -677,9 +691,8 @@ async function buildPdfFromText(rawText, title, filename) {
       useCORS: true,
     });
 
-    const pageWidth = doc.internal.pageSize.getWidth();
     const pageHeight = doc.internal.pageSize.getHeight();
-    const margin = 24;
+    const margin = sideMarginPt;
     const imageWidth = pageWidth - margin * 2;
     const imageHeight = (canvas.height * imageWidth) / canvas.width;
     const pageHeightAvailable = pageHeight - margin * 2;
