@@ -665,7 +665,10 @@ async function buildPdfFromText(rawText, title, filename) {
               y: 0,
               width: pageWidth - sideMarginPt * 2,
               windowWidth: 760,
-              callback: resolve,
+              callback: () => {
+                console.log("HTML EXPORT COMPLETED");
+                resolve();
+              },
               html2canvas: { scale: 1 },
             });
           } catch (error) {
