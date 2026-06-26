@@ -319,6 +319,13 @@ body {
 }
 
 @media (max-width: 520px) {
+  .aurora::before,
+  .aurora::after {
+    filter: none;
+    mix-blend-mode: normal;
+    opacity: 0.45;
+  }
+
   .account-sidebar {
     top: 12px;
     right: 12px;

@@ -795,6 +795,47 @@ body {
 }
 
 @media (max-width: 520px) {
+  .aurora::before,
+  .aurora::after {
+    animation: none;
+    filter: none;
+    mix-blend-mode: normal;
+    opacity: 0.45;
+  }
+
+  .nav,
+  .panel,
+  .quick-btn,
+  .explain-btn,
+  .modal-overlay,
+  .elite-upgrade-card,
+  .change-topic-btn,
+  #startSessionBtn,
+  #upgradeButton {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+
+  .nav,
+  .panel,
+  .elite-upgrade-card {
+    background: rgba(11, 11, 15, 0.92);
+  }
+
+  .modal-overlay {
+    background: rgba(0, 0, 0, 0.82);
+  }
+
+  .panel,
+  .elite-upgrade-card,
+  .modal-card {
+    box-shadow: 0 18px 50px rgba(0, 0, 0, 0.26);
+  }
+
+  .time-btn {
+    box-shadow: none;
+  }
+
   .explain-options {
     grid-template-columns: 1fr;
   }

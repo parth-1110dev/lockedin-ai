@@ -3,6 +3,10 @@ console.log("KNOWLEDGE PACK JS LOADED");
 const STORAGE_TOPIC_KEY = "lockedin_selected_topic";
 const STORAGE_SESSION_CONTENT_KEY = "lockedin_session_content";
 
+const PDF_JSPDF_SRC = "https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js";
+const PDF_HTML2CANVAS_SRC =
+  "https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js";
+
 const _host = window.location.hostname;
 const API_BASE =
   !window.location.hostname ||
@@ -47,6 +51,34 @@ let generatedNotes = "";
 let isGenerating = false;
 let isDownloading = false;
 let sessionMathBlocks = new Map();
+let pdfLibrariesPromise = null;
+
+function loadScript(src) {
+  return new Promise((resolve, reject) => {
+    if (document.querySelector(`script[src="${src}"]`)) {
+      resolve();
+      return;
+    }
+
+    const script = document.createElement("script");
+    script.src = src;
+    script.onload = () => resolve();
+    script.onerror = () => reject(new Error(`Failed to load script: ${src}`));
+    document.head.appendChild(script);
+  });
+}
+
+function loadPdfLibraries() {
+  if (pdfLibrariesPromise) {
+    return pdfLibrariesPromise;
+  }
+
+  pdfLibrariesPromise = Promise.all([
+    loadScript(PDF_JSPDF_SRC),
+    loadScript(PDF_HTML2CANVAS_SRC),
+  ]);
+  return pdfLibrariesPromise;
+}
 
 function isKatexAvailable() {
   return typeof window.katex !== "undefined" && typeof window.katex.renderToString === "function";
@@ -772,9 +804,7 @@ async function downloadNotes() {
       const fileName = effectiveFormat === "exam"
         ? `${baseName}-exam-mode-notes.pdf`
         : `${baseName}-notes.pdf`;
-      console.log("ABOUT TO CALL PDF");
-      console.log("FORMAT:", effectiveFormat);
-      console.log("CONTENT LENGTH:", content.length);
+      await loadPdfLibraries();
       await buildPdfFromText(content, title, fileName);
       window.localStorage.removeItem("lockedin_generated_notes");
       return;
