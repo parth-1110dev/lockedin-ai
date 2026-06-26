@@ -312,9 +312,14 @@
 }
 
 @media (max-width: 520px) {
+  .aurora {
+    transform: none;
+  }
+
   .aurora::before,
   .aurora::after {
     animation: none;
+    -webkit-filter: none;
     filter: none;
     mix-blend-mode: normal;
     opacity: 0.45;
@@ -342,6 +347,10 @@
   .format-btn.is-selected,
   .format-btn-highlight.is-selected {
     box-shadow: none;
+  }
+
+  .format-btn {
+    transition: none;
   }
 
   .knowledge-pack-page {

@@ -319,8 +319,14 @@ body {
 }
 
 @media (max-width: 520px) {
+  .aurora {
+    transform: none;
+  }
+
   .aurora::before,
   .aurora::after {
+    animation: none;
+    -webkit-filter: none;
     filter: none;
     mix-blend-mode: normal;
     opacity: 0.45;

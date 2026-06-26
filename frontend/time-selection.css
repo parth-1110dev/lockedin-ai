@@ -795,9 +795,14 @@ body {
 }
 
 @media (max-width: 520px) {
+  .aurora {
+    transform: none;
+  }
+
   .aurora::before,
   .aurora::after {
     animation: none;
+    -webkit-filter: none;
     filter: none;
     mix-blend-mode: normal;
     opacity: 0.45;
@@ -834,6 +839,24 @@ body {
 
   .time-btn {
     box-shadow: none;
+  }
+
+  .time-btn:hover:not(:disabled),
+  .quick-btn:hover,
+  .explain-btn:hover,
+  .explain-btn.is-selected {
+    box-shadow: none;
+  }
+
+  .back-btn,
+  .time-btn,
+  .quick-btn,
+  .explain-btn,
+  .btn,
+  .change-topic-btn,
+  #startSessionBtn,
+  #upgradeButton {
+    transition: none;
   }
 
   .explain-options {
